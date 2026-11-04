@@ -1,10 +1,6 @@
 // The Daily / Weekly / Monthly pill switch, also reused for Revenue / Units Sold.
 
-export const TIME_VIEWS = [
-  { value: 'daily', label: 'Daily' },
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'monthly', label: 'Monthly' },
-]
+import { TIME_VIEWS } from './salesConstants'
 
 export default function ViewToggle({ value, onChange, options = TIME_VIEWS }) {
   return (

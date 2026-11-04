@@ -3,7 +3,8 @@ import { Layers } from 'lucide-react'
 import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts'
 import { formatINR, formatNumber } from '../../utils/salesUtils'
 import DateRangeFilter from './DateRangeFilter'
-import { CATEGORY_COLORS, Card, CardHeader, FALLBACK_COLOR } from './SalesUI'
+import { Card, CardHeader } from './SalesUI'
+import { CATEGORY_COLORS, FALLBACK_COLOR } from './salesConstants'
 import ViewToggle from './ViewToggle'
 
 const METRICS = {

@@ -1,7 +1,8 @@
 import { Trophy } from 'lucide-react'
 import { formatNumber } from '../../utils/salesUtils'
 import DateRangeFilter from './DateRangeFilter'
-import { CATEGORY_COLORS, Card, CardHeader, FALLBACK_COLOR } from './SalesUI'
+import { Card, CardHeader } from './SalesUI'
+import { CATEGORY_COLORS, FALLBACK_COLOR } from './salesConstants'
 
 // The header row stays pinned while the rows scroll underneath it
 const headCell =

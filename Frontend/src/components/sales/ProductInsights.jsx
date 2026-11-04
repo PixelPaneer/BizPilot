@@ -1,6 +1,7 @@
 import { ChevronRight, Package, Trophy } from 'lucide-react'
 import { formatNumber } from '../../utils/salesUtils'
-import { CATEGORY_COLORS, Card, CardHeader, FALLBACK_COLOR } from './SalesUI'
+import { Card, CardHeader } from './SalesUI'
+import { CATEGORY_COLORS, FALLBACK_COLOR } from './salesConstants'
 
 const headCell =
   'px-3 py-2.5 whitespace-nowrap first:rounded-l-lg last:rounded-r-lg'
