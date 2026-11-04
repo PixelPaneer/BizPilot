@@ -15,7 +15,7 @@ function Sidebar({ activePage, onNavigate, isOpen, onClose }) {
     <>
       {isOpen && (
         <div
-          className="fixed inset-0 top-[4.5rem] z-30 bg-ink/10"
+          className="fixed inset-0 top-[var(--header-h)] z-30 bg-ink/10"
           onClick={onClose}
           aria-hidden="true"
         />
@@ -23,7 +23,7 @@ function Sidebar({ activePage, onNavigate, isOpen, onClose }) {
       <aside
         id="main-navigation"
         aria-label="Main navigation"
-        className={`fixed left-0 top-[4.5rem] z-40 h-[calc(100dvh-4.5rem)] w-64 overflow-y-auto border-r border-line bg-paper p-3 shadow-xl transition-[transform,visibility] duration-200 ${
+        className={`fixed left-0 top-[var(--header-h)] z-40 h-[calc(100dvh-var(--header-h))] w-64 overflow-y-auto border-r border-line bg-paper p-3 shadow-xl transition-[transform,visibility] duration-200 ${
           isOpen ? 'translate-x-0' : '-translate-x-full invisible'
         }`}
       >

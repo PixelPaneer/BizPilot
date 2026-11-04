@@ -49,18 +49,18 @@ function Header({
   onSignOut,
 }) {
   return (
-    <header className="sticky top-0 z-50 h-[4.5rem] border-b border-line bg-paper">
-      <div className="flex h-full items-center gap-3 px-4 sm:px-6">
+    <header className="header-divider sticky top-0 z-50 h-[var(--header-h)] bg-paper">
+      <div className="header-inner flex h-full items-center gap-3">
         <button
           type="button"
           aria-label={isMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
           aria-expanded={isMenuOpen}
           aria-controls="main-navigation"
           onClick={onMenuToggle}
-          className="burger flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-line bg-white text-ink transition-colors hover:bg-sage-light"
+          className="burger flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-xl border border-line bg-white text-ink transition-colors hover:bg-sage-light"
         >
           <Menu
-            size={20}
+            size={22}
             aria-hidden="true"
             className={`transition-transform duration-300 ${isMenuOpen ? 'rotate-180' : ''}`}
           />
