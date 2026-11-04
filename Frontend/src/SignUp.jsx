@@ -1,5 +1,4 @@
 import { useState } from "react";
-import AuthLayout from "./AuthLayout.jsx";
 import Field from "./Field.jsx";
 import { User, Mail, Lock, Eye, EyeOff, Chat as WhatsApp, Arrow } from "./icons.jsx";
 

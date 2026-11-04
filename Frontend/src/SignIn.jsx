@@ -41,7 +41,7 @@ const inputWrap =
   "flex h-[50px] items-center gap-2.5 rounded-xl border bg-white px-3.5 text-muted transition " +
   "focus-within:border-brand-500 focus-within:text-brand-700 focus-within:ring-4 focus-within:ring-mint-100";
 
-export default function SignIn() {
+export default function SignIn({ onSignIn }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
@@ -68,10 +68,11 @@ export default function SignIn() {
     await new Promise((r) => setTimeout(r, 900));
     setLoading(false);
     console.log("Signed in:", { email });
+    onSignIn?.();
   };
 
   return (
-    <main className="grid min-h-screen min-[860px]:h-screen min-[860px]:overflow-hidden min-[860px]:grid-cols-[1.15fr_1fr]">
+    <main className="grid min-h-screen font-[Figtree] min-[860px]:h-screen min-[860px]:overflow-hidden min-[860px]:grid-cols-[1.15fr_1fr]">
       {/* ---------- Left: brand panel ---------- */}
       <section
         className="relative hidden h-full min-h-0 flex-col overflow-hidden min-[860px]:flex
