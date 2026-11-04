@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
+import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import Header from './components/Header'
 import Sidebar from './components/Sidebar'
 import InventorySummary from './components/InventorySummary'
 import ProductInventory from './components/ProductInventory'
 import PlaceholderPage from './components/PlaceholderPage'
-import SignedOutPage from './components/SignedOutPage'
+import SignIn from './SignIn'
 import LowStockAlertModal from './components/LowStockAlertModal'
 import { initialProducts } from './data/products'
 import { pages } from './data/pages'
@@ -70,6 +71,7 @@ function getPageHeading(pageId) {
 }
 
 function App() {
+  const navigate = useNavigate()
   const [products, setProducts] = useState(loadProducts)
   const [isSignedIn, setIsSignedIn] = useState(loadSignedIn)
   const [activePage, setActivePage] = useState('inventory')
@@ -141,12 +143,14 @@ function App() {
     setIsSignedIn(false)
     setStockAlert(null)
     setIsSidebarOpen(false)
+    navigate('/signIn', { replace: true })
   }
 
   function handleSignIn() {
     setIsSignedIn(true)
     setActivePage('inventory')
     setStockAlert(buildSummaryAlert(products))
+    navigate('/inventory', { replace: true })
   }
 
   function handleViewInventory() {
@@ -154,70 +158,82 @@ function App() {
     handleNavigate('inventory')
   }
 
-  if (!isSignedIn) {
-    return <SignedOutPage onSignIn={handleSignIn} />
-  }
-
   const heading = getPageHeading(activePage)
   const currentPage = pages.find((page) => page.id === activePage) ?? pages[0]
   const alertCount = products.filter(needsAttention).length
 
   return (
-    <div className="min-h-screen bg-cream">
-      <Header
-        products={products}
-        heading={heading}
-        alertCount={alertCount}
-        isMenuOpen={isSidebarOpen}
-        onMenuToggle={() => setIsSidebarOpen((open) => !open)}
-        onNavigate={handleNavigate}
-        onSelectProduct={handleSelectProductFromSearch}
-        onOpenAlerts={() => setStockAlert(buildSummaryAlert(products))}
-        onSignOut={handleSignOut}
-      />
-
-      <Sidebar
-        activePage={activePage}
-        onNavigate={handleNavigate}
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-      />
-
-      <main className="px-4 py-6 sm:px-6">
-        <div className="mx-auto max-w-7xl space-y-6">
-          {/* On screens narrower than 1280px the title lives here instead of the header */}
-          <div className="xl:hidden">
-            <h1 className="text-2xl font-bold text-ink">{heading.title}</h1>
-            <p className="mt-1 text-sm text-muted">{heading.subtitle}</p>
-          </div>
-
-          {activePage === 'inventory' ? (
-            <>
-              <InventorySummary products={products} />
-              <ProductInventory
+    <Routes>
+      <Route path="/signIn" element={<SignIn onSignIn={handleSignIn} />} />
+      <Route
+        path="/inventory"
+        element={
+          isSignedIn ? (
+            <div className="min-h-screen bg-cream">
+              <Header
                 products={products}
-                requestedProductId={requestedProductId}
-                onRequestHandled={() => setRequestedProductId(null)}
-                onAddProduct={handleAddProduct}
-                onUpdateProduct={handleUpdateProduct}
-                onAdjustStock={handleAdjustStock}
-                onDeleteProduct={handleDeleteProduct}
+                heading={heading}
+                alertCount={alertCount}
+                isMenuOpen={isSidebarOpen}
+                onMenuToggle={() => setIsSidebarOpen((open) => !open)}
+                onNavigate={handleNavigate}
+                onSelectProduct={handleSelectProductFromSearch}
+                onOpenAlerts={() => setStockAlert(buildSummaryAlert(products))}
+                onSignOut={handleSignOut}
               />
-            </>
-          ) : (
-            <PlaceholderPage title={currentPage.label} />
-          )}
-        </div>
-      </main>
 
-      {stockAlert && (
-        <LowStockAlertModal
-          alert={stockAlert}
-          onClose={() => setStockAlert(null)}
-          onViewInventory={handleViewInventory}
-        />
-      )}
-    </div>
+              <Sidebar
+                activePage={activePage}
+                onNavigate={handleNavigate}
+                isOpen={isSidebarOpen}
+                onClose={() => setIsSidebarOpen(false)}
+              />
+
+              <main className="px-4 py-6 sm:px-6">
+                <div className="mx-auto max-w-7xl space-y-6">
+                  {/* On screens narrower than 1280px the title lives here instead of the header */}
+                  <div className="xl:hidden">
+                    <h1 className="text-2xl font-bold text-ink">{heading.title}</h1>
+                    <p className="mt-1 text-sm text-muted">{heading.subtitle}</p>
+                  </div>
+
+                  {activePage === 'inventory' ? (
+                    <>
+                      <InventorySummary products={products} />
+                      <ProductInventory
+                        products={products}
+                        requestedProductId={requestedProductId}
+                        onRequestHandled={() => setRequestedProductId(null)}
+                        onAddProduct={handleAddProduct}
+                        onUpdateProduct={handleUpdateProduct}
+                        onAdjustStock={handleAdjustStock}
+                        onDeleteProduct={handleDeleteProduct}
+                      />
+                    </>
+                  ) : (
+                    <PlaceholderPage title={currentPage.label} />
+                  )}
+                </div>
+              </main>
+
+              {stockAlert && (
+                <LowStockAlertModal
+                  alert={stockAlert}
+                  onClose={() => setStockAlert(null)}
+                  onViewInventory={handleViewInventory}
+                />
+              )}
+            </div>
+          ) : (
+            <Navigate to="/signIn" replace />
+          )
+        }
+      />
+      <Route
+        path="*"
+        element={<Navigate to={isSignedIn ? '/inventory' : '/signIn'} replace />}
+      />
+    </Routes>
   )
 }
 
