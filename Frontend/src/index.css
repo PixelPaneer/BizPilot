@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans Variable", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* Brand colours */
+  --color-forest: #234c3a;
+  --color-deep: #183d2e;
+  --color-sage: #a8c3a0;
+  --color-sage-light: #e7efe4;
+  --color-peach: #e7a58b;
+  --color-gold: #d09f5c;
+  --color-gold-dark: #a8772c;
+
+  /* Page and text */
+  --color-cream: #f6f1e7;
+  --color-paper: #fbf8f2;
+  --color-ink: #26352d;
+  --color-muted: #788178;
+  --color-line: #e8e5dc;
+
+  /* Status colours */
+  --color-warn-bg: #f7ecd0;
+  --color-warn-text: #8a6215;
+  --color-warn-bar: #e2b95a;
+  --color-danger-bg: #f6dfdb;
+  --color-danger-text: #9b3b33;
+  --color-alert: #e5484d;
+}
+
+body {
+  background-color: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+/* Stops iPhones from zooming in when you tap a field (they zoom if text is under 16px). */
+@media (max-width: 639px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
