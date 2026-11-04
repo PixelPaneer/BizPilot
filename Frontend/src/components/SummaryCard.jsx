@@ -1,20 +1,21 @@
-import { ArrowUp } from 'lucide-react'
+const iconStyles = {
+  sage: 'bg-sage-light text-forest',
+  amber: 'bg-warn-bg text-warn-text',
+  red: 'bg-danger-bg text-danger-text',
+}
 
-// Top stat card (icon + label + value + growth line).
-export default function SummaryCard({ icon, label, value, change, changeLabel }) {
+function SummaryCard({ label, value, icon: Icon, tone = 'sage' }) {
   return (
-    <div className="summary-card">
-      <div className="summary-card__icon">{icon}</div>
-      <div className="summary-card__body">
-        <span className="summary-card__label">{label}</span>
-        <strong className="summary-card__value">{value}</strong>
-        {change !== undefined && (
-          <span className="summary-card__change">
-            <ArrowUp size={14} strokeWidth={2.6} />
-            <b>{change}%</b> {changeLabel}
-          </span>
-        )}
+    <div className="flex items-center justify-between rounded-2xl border border-line bg-white p-5 shadow-sm">
+      <div>
+        <p className="text-sm text-muted">{label}</p>
+        <p className="mt-2 text-3xl font-semibold text-ink">{value}</p>
+      </div>
+      <div className={`flex h-11 w-11 items-center justify-center rounded-full ${iconStyles[tone]}`}>
+        <Icon size={22} aria-hidden="true" />
       </div>
     </div>
   )
 }
+
+export default SummaryCard

@@ -1,36 +1,59 @@
-import { NavLink } from 'react-router-dom'
-import { TrendingUp, Home, Package, Settings, CircleHelp  } from 'lucide-react'
+import { useEffect } from 'react'
+import { pages } from '../data/pages'
 
-const links = [
-  { to: '/', label: 'Dashboard', icon: Home, end: true },
-  { to: '/inventory', label: 'Inventory ', icon: Package },
-  { to: '/analytics', label: 'Analytics', icon: TrendingUp },
-  { to: '/help', label: 'Help & Support', icon: CircleHelp },   // To be decided
-  { to: '/settings', label: 'Settings', icon: Settings },
-]
+function Sidebar({ activePage, onNavigate, isOpen, onClose }) {
+  useEffect(() => {
+    if (!isOpen) return
+    function handleKeyDown(event) {
+      if (event.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, onClose])
 
-export default function Sidebar({ open, onNavigate }) {
   return (
-    <aside className="sidebar" aria-hidden={!open}>
-      {/* <div className="sidebar__brand">
-        <img src="/bizpilot-logo.png" alt="BizPilot – AI Business Assistant" />
-      </div> */}
-
-      <nav className="sidebar__nav">
-        {links.map(({ to, label, icon: Icon, end }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={end}
-            tabIndex={open ? 0 : -1}
-            onClick={onNavigate}
-            className={({ isActive }) => `nav-link ${isActive ? 'nav-link--active' : ''}`}
-          >
-            <Icon size={19} strokeWidth={2} />
-            <span>{label}</span>
-          </NavLink>
-        ))}
-      </nav>
-    </aside>
+    <>
+      {isOpen && (
+        <div
+          className="fixed inset-0 top-[4.5rem] z-30 bg-ink/10"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
+      <aside
+        id="main-navigation"
+        aria-label="Main navigation"
+        className={`fixed left-0 top-[4.5rem] z-40 h-[calc(100dvh-4.5rem)] w-64 overflow-y-auto border-r border-line bg-paper p-3 shadow-xl transition-[transform,visibility] duration-200 ${
+          isOpen ? 'translate-x-0' : '-translate-x-full invisible'
+        }`}
+      >
+        <nav className="space-y-1">
+          {pages.map((page) => {
+            const Icon = page.icon
+            const isActive = page.id === activePage
+            return (
+              <button
+                key={page.id}
+                type="button"
+                aria-current={isActive ? 'page' : undefined}
+                onClick={() => onNavigate(page.id)}
+                className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-[0.95rem] font-semibold transition-colors ${
+                  isActive ? 'bg-sage-light text-forest' : 'text-ink hover:bg-sage-light/60'
+                }`}
+              >
+                <Icon
+                  size={19}
+                  aria-hidden="true"
+                  className={isActive ? 'text-forest' : 'text-muted'}
+                />
+                {page.label}
+              </button>
+            )
+          })}
+        </nav>
+      </aside>
+    </>
   )
 }
+
+export default Sidebar

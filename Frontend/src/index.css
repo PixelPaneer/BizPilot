@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 /* ===== BizPilot theme — colors taken from the logo ===== */
 :root {
   --cream: #fcf9f2;
@@ -29,16 +31,18 @@ html, body, #root { height: 100%; }
 body {
   margin: 0;
   background: var(--page);
-  color: var(--text);
   -webkit-font-smoothing: antialiased;
 }
 h1, h2, p, ul { margin: 0; padding: 0; }
 ul { list-style: none; }
-a { color: inherit; text-decoration: none; }
-button { font: inherit; color: inherit; cursor: pointer; }
+a { text-decoration: none; }
+button { font: inherit; cursor: pointer; }
 
 /* ===== Layout ===== */
-.app { min-height: 100%; }
+.app {
+  min-height: 100%;
+  color: var(--text);
+}
 
 .main {
   min-height: 100vh;
@@ -335,4 +339,64 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 @media (max-width: 700px) {
   .header { flex-wrap: nowrap; padding: 0 16px; }
+}
+@theme {
+  --font-sans: "Plus Jakarta Sans Variable", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --color-forest: #234c3a;
+  --color-deep: #183d2e;
+  --color-sage: #a8c3a0;
+  --color-sage-light: #e7efe4;
+  --color-peach: #e7a58b;
+  --color-gold: #d09f5c;
+  --color-gold-dark: #a8772c;
+
+  --color-cream: #f6f1e7;
+  --color-paper: #fbf8f2;
+  --color-ink: #26352d;
+  --color-muted: #788178;
+  --color-line: #e8e5dc;
+
+  --color-warn-bg: #f7ecd0;
+  --color-warn-text: #8a6215;
+  --color-warn-bar: #e2b95a;
+  --color-danger-bg: #f6dfdb;
+  --color-danger-text: #9b3b33;
+  --color-alert: #e5484d;
+
+  --color-brand-900: #183d2e;
+  --color-brand-700: #234c3a;
+  --color-brand-500: #2f6a52;
+  --color-mint-100: #e7efe4;
+  --color-mint-50: #fbf8f2;
+  --color-clay: #e7a58b;
+  --color-warn-100: #f7ecd0;
+  --color-warn-700: #8a6215;
+  --color-danger-700: #9b3b33;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
+  body {
+    @apply font-sans text-ink antialiased;
+    background-color: var(--color-cream);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand-500);
+    outline-offset: 2px;
+  }
+}
+
+@media (max-width: 639px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
 }
