@@ -112,13 +112,10 @@ export default function SignIn({ onSignIn }) {
           className="absolute bottom-[5%] right-[-8.6vw] hidden aspect-[3/4] w-[clamp(300px,31vw,450px)] rounded-bl-[10%] rounded-tl-[42%] object-cover shadow-[0_24px_70px_rgba(31,74,58,0.18)] min-[1280px]:block"
         />
 
-        <figure className="relative z-10 mt-auto max-w-[480px] rounded-[14px] border border-line bg-white/70 px-[22px] py-[18px]">
+        <figure className="relative z-10 mt-6 max-w-[400px] rounded-[14px] border border-line bg-white/70 px-[22px] py-[18px]">
           <blockquote className="text-[15px] leading-normal text-brand-900">
             BizPilot helps me manage my shop easily and saves a lot of time.
           </blockquote>
-          <figcaption className="mt-1.5 text-[13px] text-muted">
-            Small business owner, Bhopal
-          </figcaption>
         </figure>
       </section>
 
