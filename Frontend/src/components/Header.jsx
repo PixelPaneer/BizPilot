@@ -53,13 +53,17 @@ function Header({
       <div className="flex h-full items-center gap-3 px-4 sm:px-6">
         <button
           type="button"
-          aria-label="Toggle navigation menu"
+          aria-label={isMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
           aria-expanded={isMenuOpen}
           aria-controls="main-navigation"
           onClick={onMenuToggle}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-line bg-white text-ink transition-colors hover:bg-sage-light"
+          className="burger flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-line bg-white text-ink transition-colors hover:bg-sage-light"
         >
-          <Menu size={20} aria-hidden="true" />
+          <Menu
+            size={20}
+            aria-hidden="true"
+            className={`transition-transform duration-300 ${isMenuOpen ? 'rotate-180' : ''}`}
+          />
         </button>
         <BrandLogo />
         <div className="ml-3 hidden min-w-0 xl:block">

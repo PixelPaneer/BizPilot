@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import Dashboard from './pages/Dashboard'
 import DashboardHeader from './components/DashboardHeader'
@@ -17,6 +17,7 @@ import { getStockStatus, getGreeting } from './utils/inventoryUtils'
 
 const STORAGE_KEY = 'bizpilot-products'
 const SIGN_IN_KEY = 'bizpilot-signed-in'
+const SalesInsightsPage = lazy(() => import('./components/sales/SalesInsightsPage'))
 
 function loadProducts() {
   try {
@@ -228,6 +229,54 @@ function App() {
     )
   }
 
+  function renderSalesPage() {
+    const heading = getPageHeading('analytics')
+    const alertCount = products.filter(needsAttention).length
+
+    return (
+      <div className="min-h-screen bg-cream">
+        <Header
+          products={products}
+          heading={heading}
+          alertCount={alertCount}
+          isMenuOpen={isSidebarOpen}
+          onMenuToggle={() => setIsSidebarOpen((open) => !open)}
+          onNavigate={handleNavigate}
+          onSelectProduct={handleSelectProduct}
+          onOpenAlerts={() => setStockAlert(buildSummaryAlert(products))}
+          onSignOut={handleSignOut}
+        />
+        <Sidebar
+          activePage="analytics"
+          onNavigate={handleNavigate}
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+        />
+        <main className="px-4 py-6 sm:px-6">
+          <Suspense
+            fallback={
+              <div
+                className="mx-auto max-w-[1400px] py-12 text-center text-sm text-muted"
+                role="status"
+              >
+                Loading sales insights...
+              </div>
+            }
+          >
+            <SalesInsightsPage />
+          </Suspense>
+        </main>
+        {stockAlert && (
+          <LowStockAlertModal
+            alert={stockAlert}
+            onClose={() => setStockAlert(null)}
+            onViewInventory={() => setStockAlert(null)}
+          />
+        )}
+      </div>
+    )
+  }
+
   const signedIn = (element) => (isSignedIn ? element : <Navigate to="/signIn" replace />)
 
   return (
@@ -235,12 +284,7 @@ function App() {
       <Route path="/signIn" element={<SignIn onSignIn={handleSignIn} />} />
       <Route path="/" element={signedIn(renderDashboardPage(<Dashboard period={period} />))} />
       <Route path="/inventory" element={signedIn(renderInventoryPage())} />
-      <Route
-        path="/analytics"
-        element={signedIn(renderDashboardPage(
-          <PlaceholderPage title="Business Analytics" text="Detailed sales and business insights will appear here." />,
-        ))}
-      />
+      <Route path="/analytics" element={signedIn(renderSalesPage())} />
       <Route
         path="/help"
         element={signedIn(renderDashboardPage(
