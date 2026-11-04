@@ -1,16 +1,19 @@
 import { useEffect, useState } from 'react'
-import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import Dashboard from './pages/Dashboard'
+import DashboardHeader from './components/DashboardHeader'
+import DashboardSidebar from './components/DashboardSidebar'
 import Header from './components/Header'
-import Sidebar from './components/Sidebar'
 import InventorySummary from './components/InventorySummary'
-import ProductInventory from './components/ProductInventory'
-import PlaceholderPage from './components/PlaceholderPage'
-import SignIn from './SignIn'
 import LowStockAlertModal from './components/LowStockAlertModal'
-import { initialProducts } from './data/products'
-import { pages } from './data/pages'
+import PlaceholderPage from './components/PlaceholderPage'
+import ProductInventory from './components/ProductInventory'
+import Sidebar from './components/Sidebar'
+import SignIn from './SignIn'
 import { currentUser } from './data/user'
-import { getStockStatus } from './utils/inventoryUtils'
+import { pages } from './data/pages'
+import { initialProducts } from './data/products'
+import { getStockStatus, getGreeting } from './utils/inventoryUtils'
 
 const STORAGE_KEY = 'bizpilot-products'
 const SIGN_IN_KEY = 'bizpilot-signed-in'
@@ -24,7 +27,6 @@ function loadProducts() {
   }
 }
 
-// You are signed in unless you previously signed out.
 function loadSignedIn() {
   try {
     return localStorage.getItem(SIGN_IN_KEY) !== 'false'
@@ -33,36 +35,23 @@ function loadSignedIn() {
   }
 }
 
-// crypto.randomUUID only works on https or localhost. This fallback keeps
-// "Add Product" working when you open the app on your phone over Wi-Fi.
 function createId() {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID()
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
 }
 
-// A product "needs attention" when it is low on stock or out of stock.
 function needsAttention(product) {
   const status = getStockStatus(product)
   return status === 'low-stock' || status === 'out-of-stock'
 }
 
-// Builds the pop-up listing every product that needs restocking (or null if none).
 function buildSummaryAlert(products) {
   const items = products.filter(needsAttention)
   return items.length > 0 ? { kind: 'summary', items } : null
 }
 
-function getGreeting() {
-  const hour = new Date().getHours()
-  if (hour < 12) return 'Good morning'
-  if (hour < 17) return 'Good afternoon'
-  return 'Good evening'
-}
-
-// The title and subtitle shown at the top of each page.
 function getPageHeading(pageId) {
   const page = pages.find((item) => item.id === pageId) ?? pages[0]
-
   if (page.id === 'dashboard') {
     const firstName = currentUser.name.split(' ')[0]
     return { title: `${getGreeting()}, ${firstName} 👋`, subtitle: page.subtitle }
@@ -70,15 +59,19 @@ function getPageHeading(pageId) {
   return { title: page.label, subtitle: page.subtitle }
 }
 
+function getPageId(pathname) {
+  if (pathname === '/') return 'dashboard'
+  return pathname.slice(1)
+}
+
 function App() {
   const navigate = useNavigate()
+  const { pathname } = useLocation()
   const [products, setProducts] = useState(loadProducts)
   const [isSignedIn, setIsSignedIn] = useState(loadSignedIn)
-  const [activePage, setActivePage] = useState('inventory')
+  const [period, setPeriod] = useState('month')
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  // Set when you click a product in the top search bar.
   const [requestedProductId, setRequestedProductId] = useState(null)
-  // The low-stock pop-up. On first load, show a summary if anything needs restocking.
   const [stockAlert, setStockAlert] = useState(() =>
     loadSignedIn() ? buildSummaryAlert(products) : null,
   )
@@ -91,7 +84,20 @@ function App() {
     localStorage.setItem(SIGN_IN_KEY, String(isSignedIn))
   }, [isSignedIn])
 
-  // Raises a pop-up only if the product's status just got worse.
+  useEffect(() => {
+    if (!isSidebarOpen) return
+    const handler = (event) => {
+      if (event.target.closest('.sidebar, .burger')) return
+      setIsSidebarOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    document.addEventListener('touchstart', handler)
+    return () => {
+      document.removeEventListener('mousedown', handler)
+      document.removeEventListener('touchstart', handler)
+    }
+  }, [isSidebarOpen])
+
   function alertIfWorse(before, after) {
     if (!needsAttention(after)) return
     if (before && getStockStatus(before) === getStockStatus(after)) return
@@ -99,9 +105,9 @@ function App() {
   }
 
   function handleAddProduct(productData) {
-    const newProduct = { id: createId(), ...productData }
-    setProducts((current) => [newProduct, ...current])
-    alertIfWorse(null, newProduct)
+    const product = { id: createId(), ...productData }
+    setProducts((current) => [product, ...current])
+    alertIfWorse(null, product)
   }
 
   function handleUpdateProduct(id, productData) {
@@ -128,14 +134,13 @@ function App() {
     setProducts((current) => current.filter((product) => product.id !== id))
   }
 
-  function handleNavigate(page) {
-    setActivePage(page)
+  function handleNavigate(pageId) {
+    navigate(pageId === 'dashboard' ? '/' : `/${pageId}`)
     setIsSidebarOpen(false)
   }
 
-  // From the top search: go to Inventory and open that product's pop-up.
-  function handleSelectProductFromSearch(product) {
-    setActivePage('inventory')
+  function handleSelectProduct(product) {
+    navigate('/inventory')
     setRequestedProductId(product.id)
   }
 
@@ -148,91 +153,107 @@ function App() {
 
   function handleSignIn() {
     setIsSignedIn(true)
-    setActivePage('inventory')
     setStockAlert(buildSummaryAlert(products))
     navigate('/inventory', { replace: true })
   }
 
-  function handleViewInventory() {
-    setStockAlert(null)
-    handleNavigate('inventory')
+  function renderDashboardPage(content) {
+    return (
+      <div className={`app ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+        <DashboardSidebar open={isSidebarOpen} onNavigate={() => setIsSidebarOpen(false)} />
+        <div className="main">
+          <DashboardHeader
+            onToggleSidebar={() => setIsSidebarOpen((open) => !open)}
+            sidebarOpen={isSidebarOpen}
+            period={period}
+            onPeriodChange={setPeriod}
+            onSignOut={handleSignOut}
+          />
+          <main className="content">{content}</main>
+        </div>
+      </div>
+    )
   }
 
-  const heading = getPageHeading(activePage)
-  const currentPage = pages.find((page) => page.id === activePage) ?? pages[0]
-  const alertCount = products.filter(needsAttention).length
+  function renderInventoryPage() {
+    const pageId = getPageId(pathname)
+    const heading = getPageHeading(pageId)
+    const alertCount = products.filter(needsAttention).length
+
+    return (
+      <div className="min-h-screen bg-cream">
+        <Header
+          products={products}
+          heading={heading}
+          alertCount={alertCount}
+          isMenuOpen={isSidebarOpen}
+          onMenuToggle={() => setIsSidebarOpen((open) => !open)}
+          onNavigate={handleNavigate}
+          onSelectProduct={handleSelectProduct}
+          onOpenAlerts={() => setStockAlert(buildSummaryAlert(products))}
+          onSignOut={handleSignOut}
+        />
+        <Sidebar
+          activePage={pageId}
+          onNavigate={handleNavigate}
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+        />
+        <main className="px-4 py-6 sm:px-6">
+          <div className="mx-auto max-w-7xl space-y-6">
+            <div className="xl:hidden">
+              <h1 className="text-2xl font-bold text-ink">{heading.title}</h1>
+              <p className="mt-1 text-sm text-muted">{heading.subtitle}</p>
+            </div>
+            <InventorySummary products={products} />
+            <ProductInventory
+              products={products}
+              requestedProductId={requestedProductId}
+              onRequestHandled={() => setRequestedProductId(null)}
+              onAddProduct={handleAddProduct}
+              onUpdateProduct={handleUpdateProduct}
+              onAdjustStock={handleAdjustStock}
+              onDeleteProduct={handleDeleteProduct}
+            />
+          </div>
+        </main>
+        {stockAlert && (
+          <LowStockAlertModal
+            alert={stockAlert}
+            onClose={() => setStockAlert(null)}
+            onViewInventory={() => setStockAlert(null)}
+          />
+        )}
+      </div>
+    )
+  }
+
+  const signedIn = (element) => (isSignedIn ? element : <Navigate to="/signIn" replace />)
 
   return (
     <Routes>
       <Route path="/signIn" element={<SignIn onSignIn={handleSignIn} />} />
+      <Route path="/" element={signedIn(renderDashboardPage(<Dashboard period={period} />))} />
+      <Route path="/inventory" element={signedIn(renderInventoryPage())} />
       <Route
-        path="/inventory"
-        element={
-          isSignedIn ? (
-            <div className="min-h-screen bg-cream">
-              <Header
-                products={products}
-                heading={heading}
-                alertCount={alertCount}
-                isMenuOpen={isSidebarOpen}
-                onMenuToggle={() => setIsSidebarOpen((open) => !open)}
-                onNavigate={handleNavigate}
-                onSelectProduct={handleSelectProductFromSearch}
-                onOpenAlerts={() => setStockAlert(buildSummaryAlert(products))}
-                onSignOut={handleSignOut}
-              />
-
-              <Sidebar
-                activePage={activePage}
-                onNavigate={handleNavigate}
-                isOpen={isSidebarOpen}
-                onClose={() => setIsSidebarOpen(false)}
-              />
-
-              <main className="px-4 py-6 sm:px-6">
-                <div className="mx-auto max-w-7xl space-y-6">
-                  {/* On screens narrower than 1280px the title lives here instead of the header */}
-                  <div className="xl:hidden">
-                    <h1 className="text-2xl font-bold text-ink">{heading.title}</h1>
-                    <p className="mt-1 text-sm text-muted">{heading.subtitle}</p>
-                  </div>
-
-                  {activePage === 'inventory' ? (
-                    <>
-                      <InventorySummary products={products} />
-                      <ProductInventory
-                        products={products}
-                        requestedProductId={requestedProductId}
-                        onRequestHandled={() => setRequestedProductId(null)}
-                        onAddProduct={handleAddProduct}
-                        onUpdateProduct={handleUpdateProduct}
-                        onAdjustStock={handleAdjustStock}
-                        onDeleteProduct={handleDeleteProduct}
-                      />
-                    </>
-                  ) : (
-                    <PlaceholderPage title={currentPage.label} />
-                  )}
-                </div>
-              </main>
-
-              {stockAlert && (
-                <LowStockAlertModal
-                  alert={stockAlert}
-                  onClose={() => setStockAlert(null)}
-                  onViewInventory={handleViewInventory}
-                />
-              )}
-            </div>
-          ) : (
-            <Navigate to="/signIn" replace />
-          )
-        }
+        path="/analytics"
+        element={signedIn(renderDashboardPage(
+          <PlaceholderPage title="Business Analytics" text="Detailed sales and business insights will appear here." />,
+        ))}
       />
       <Route
-        path="*"
-        element={<Navigate to={isSignedIn ? '/inventory' : '/signIn'} replace />}
+        path="/help"
+        element={signedIn(renderDashboardPage(
+          <PlaceholderPage title="Help & Support" text="Find answers and get in touch with support." />,
+        ))}
       />
+      <Route
+        path="/settings"
+        element={signedIn(renderDashboardPage(
+          <PlaceholderPage title="Settings" text="Configure your BizPilot account and preferences." />,
+        ))}
+      />
+      <Route path="*" element={<Navigate to={isSignedIn ? '/' : '/signIn'} replace />} />
     </Routes>
   )
 }

@@ -140,7 +140,7 @@ export default function SignIn({ onSignIn }) {
             <div className="mb-[18px]">
               <label
                 htmlFor="email"
-                className="mb-2 block text-sm font-semibold"
+                className="mb-2 block text-sm font-semibold text-ink"
               >
                 Email
               </label>
@@ -169,7 +169,7 @@ export default function SignIn({ onSignIn }) {
             <div className="mb-[18px]">
               <label
                 htmlFor="password"
-                className="mb-2 block text-sm font-semibold"
+                className="mb-2 block text-sm font-semibold text-ink"
               >
                 Password
               </label>

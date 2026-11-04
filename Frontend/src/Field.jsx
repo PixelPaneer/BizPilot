@@ -6,7 +6,7 @@ const wrap =
 export default function Field({ id, label, icon: Icon, prefix, trailing, error, className = "", ...inputProps }) {
   return (
     <div className={className}>
-      <label htmlFor={id} className="mb-1 block text-sm font-semibold">{label}</label>
+      <label htmlFor={id} className="mb-1 block text-sm font-semibold text-ink">{label}</label>
       <div className={`${wrap} ${error ? "border-danger-700" : "border-line"}`}>
         {Icon && <Icon />}
         {prefix && <span className="border-r border-line pr-2.5 text-[15px] font-medium text-ink">{prefix}</span>}

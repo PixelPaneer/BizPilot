@@ -1,10 +1,9 @@
-import { Package, TriangleAlert, PackageX } from 'lucide-react'
+import { Package, PackageX, TriangleAlert } from 'lucide-react'
 import SummaryCard from './SummaryCard'
 import { getStockCounts } from '../utils/inventoryUtils'
 
 function InventorySummary({ products }) {
   const counts = getStockCounts(products)
-
   return (
     <section aria-label="Inventory summary" className="grid grid-cols-1 gap-4 sm:grid-cols-3">
       <SummaryCard label="Total Products" value={counts.total} icon={Package} tone="sage" />

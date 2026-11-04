@@ -3,7 +3,6 @@ import { ChevronDown, LogOut } from 'lucide-react'
 import { currentUser } from '../data/user'
 import { useClickOutside } from '../utils/useClickOutside'
 
-// "Ishan" -> "IS", "Ishan Sharma" -> "IS"
 function getInitials(name) {
   const words = name.trim().split(/\s+/).filter(Boolean)
   if (words.length === 0) return '?'
@@ -15,7 +14,6 @@ function ProfileMenu({ onSignOut }) {
   const [isOpen, setIsOpen] = useState(false)
   const menuRef = useRef(null)
   const initials = getInitials(currentUser.name)
-
   useClickOutside(menuRef, () => setIsOpen(false))
 
   function handleSignOut() {
@@ -29,21 +27,18 @@ function ProfileMenu({ onSignOut }) {
         type="button"
         aria-label="Open profile menu"
         aria-expanded={isOpen}
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => setIsOpen((open) => !open)}
         className="flex items-center gap-2.5 rounded-2xl border border-line bg-white p-1 transition-colors hover:bg-sage-light md:py-1.5 md:pl-1.5 md:pr-3"
       >
         <span className="flex h-9 w-9 items-center justify-center rounded-full bg-forest text-xs font-semibold text-white">
           {initials}
         </span>
         <span className="hidden text-left md:block">
-          <span className="block text-sm font-semibold leading-tight text-ink">
-            {currentUser.name}
-          </span>
+          <span className="block text-sm font-semibold leading-tight text-ink">{currentUser.name}</span>
           <span className="block text-xs leading-tight text-muted">{currentUser.role}</span>
         </span>
         <ChevronDown size={16} aria-hidden="true" className="hidden text-muted md:block" />
       </button>
-
       {isOpen && (
         <div className="absolute right-0 mt-2 w-72 rounded-2xl border border-line bg-white p-5 shadow-lg">
           <div className="flex flex-col items-center text-center">
@@ -54,7 +49,6 @@ function ProfileMenu({ onSignOut }) {
             <p className="text-sm text-muted">{currentUser.role}</p>
             <p className="text-sm text-muted">{currentUser.email}</p>
           </div>
-
           <button
             type="button"
             onClick={handleSignOut}
