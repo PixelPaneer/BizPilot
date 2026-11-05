@@ -38,7 +38,7 @@ const features = [
 ];
 
 const inputWrap =
-  "flex h-[50px] items-center gap-2.5 rounded-xl border bg-white px-3.5 text-muted transition " +
+  "flex h-[50px] items-center gap-2.5 rounded-xl border bg-[var(--auth-input)] px-3.5 text-muted transition " +
   "focus-within:border-brand-500 focus-within:text-brand-700 focus-within:ring-4 focus-within:ring-mint-100";
 
 export default function SignIn({ onSignIn }) {
@@ -120,8 +120,8 @@ export default function SignIn({ onSignIn }) {
       </section>
 
       {/* ---------- Right: form ---------- */}
-      {signIn ? (<section className="grid min-h-screen place-items-center overflow-y-auto bg-gradient-to-b from-cream to-mint-50 px-6 py-6 min-[860px]:min-h-0 min-[860px]:bg-none min-[860px]:bg-white">
-        <div className="w-full max-w-[480px] rounded-[20px] border border-line bg-white px-[22px] py-8 shadow-[0_12px_40px_rgba(31,74,58,0.08)] sm:px-11 sm:pb-9 sm:pt-11">
+      {signIn ? (<section className="grid min-h-screen place-items-center overflow-y-auto bg-gradient-to-b from-cream to-mint-50 px-6 py-6 min-[860px]:min-h-0 min-[860px]:bg-none min-[860px]:bg-[var(--auth-page)]">
+        <div className="w-full max-w-[480px] rounded-[20px] border border-line bg-[var(--card)] px-[22px] py-8 shadow-[0_12px_40px_rgba(31,74,58,0.08)] sm:px-11 sm:pb-9 sm:pt-11">
           <div className="mb-7 flex justify-center">
             <Logo className="h-16 w-40" />
           </div>
@@ -238,8 +238,8 @@ export default function SignIn({ onSignIn }) {
           </p>
         </div>
       </section>) : (
-        <section className="grid h-screen place-items-center overflow-hidden bg-gradient-to-b from-cream to-mint-50 px-3 py-3 min-[860px]:min-h-0 min-[860px]:bg-none min-[860px]:bg-white">
-          <div className="w-full max-w-[480px] rounded-[20px] border border-line bg-white px-4 py-4 shadow-[0_12px_40px_rgba(31,74,58,0.08)] sm:px-8 sm:py-5">
+        <section className="grid h-screen place-items-center overflow-hidden bg-gradient-to-b from-cream to-mint-50 px-3 py-3 min-[860px]:min-h-0 min-[860px]:bg-none min-[860px]:bg-[var(--auth-page)]">
+          <div className="w-full max-w-[480px] rounded-[20px] border border-line bg-[var(--card)] px-4 py-4 shadow-[0_12px_40px_rgba(31,74,58,0.08)] sm:px-8 sm:py-5">
             <div className="mb-3 flex justify-center">
               <Logo className="h-16 w-40" />
             </div>

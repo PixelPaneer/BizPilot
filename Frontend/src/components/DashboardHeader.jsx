@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { Bell, Calendar, ChevronDown, Menu } from 'lucide-react'
+import BrandLogo from './BrandLogo'
 import ProfileMenu from './ProfileMenu'
 import user from '../data/user'
 import useClickOutside from '../utils/useClickOutside'
@@ -51,7 +52,7 @@ function DashboardHeader({
           className={`transition-transform duration-300 ${sidebarOpen ? 'rotate-180' : ''}`}
         />
       </button>
-      <img className="header__logo" src="/bizpilot-logo.png" alt="BizPilot – AI Business Assistant" />
+      <BrandLogo />
       <div className="header__greeting">
         <h1>
           {getGreeting()}, {user.name}

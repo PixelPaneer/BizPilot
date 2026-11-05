@@ -152,8 +152,8 @@
 }
 
 .security-save-btn {
-  background: var(--forest-green);
-  color: white;
+  background: var(--accent-bg);
+  color: var(--accent-contrast);
 }
 
 .security-save-btn:hover {
@@ -196,7 +196,7 @@
   width: 42px;
   height: 23px;
   border-radius: 20px;
-  background: #D6DCD6;
+  background: var(--toggle-track);
   padding: 3px;
   display: flex;
   align-items: center;
@@ -213,7 +213,7 @@
 }
 
 .security-toggle.enabled {
-  background: var(--forest-green);
+  background: var(--accent-bg);
 }
 
 .security-toggle.enabled span {

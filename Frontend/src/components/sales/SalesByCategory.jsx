@@ -61,7 +61,7 @@ export default function SalesByCategory({ data, dateRange, onDateRangeChange }) 
   const maxPercentage = Math.max(...shares, 1)
 
   return (
-    <Card className="relative bg-gradient-to-br from-white via-white to-[#F1F5EE] sm:p-8">
+    <Card className="relative sm:p-8">
       <CardHeader
         icon={Layers}
         title="Sales by Category"
@@ -122,18 +122,18 @@ export default function SalesByCategory({ data, dateRange, onDateRangeChange }) 
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-16 text-center">
             {active ? (
               <>
-                <span className="text-sm font-medium text-[#7A8079]">{active.name}</span>
-                <span className="mt-1 text-2xl font-bold text-[#244F3D] sm:text-3xl">
+                <span className="sales-muted text-sm font-medium">{active.name}</span>
+                <span className="sales-accent mt-1 text-2xl font-bold sm:text-3xl">
                   {metric.format(active.value)}
                 </span>
-                <span className="mt-1 text-sm text-[#7A8079]">{active.percentage}% of total</span>
+                <span className="sales-muted mt-1 text-sm">{active.percentage}% of total</span>
               </>
             ) : (
               <>
-                <span className="text-2xl font-bold text-[#244F3D] sm:text-3xl">
+                <span className="sales-accent text-2xl font-bold sm:text-3xl">
                   {metric.format(total)}
                 </span>
-                <span className="mt-1 text-sm text-[#7A8079]">{metric.centerLabel}</span>
+                <span className="sales-muted mt-1 text-sm">{metric.centerLabel}</span>
               </>
             )}
           </div>
@@ -146,18 +146,18 @@ export default function SalesByCategory({ data, dateRange, onDateRangeChange }) 
               key={slice.name}
               onMouseEnter={() => setActiveIndex(i)}
               className={`cursor-default rounded-2xl px-3 py-3 transition-all ${
-                activeIndex === i ? 'bg-[#F1F5EE]' : ''
+                activeIndex === i ? 'sales-legend-active' : ''
               } ${activeIndex !== null && activeIndex !== i ? 'opacity-50' : ''}`}
             >
               <div className="flex items-center gap-3">
                 <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: slice.color }} />
-                <span className="flex-1 text-[15px] font-medium text-[#1F2D27]">{slice.name}</span>
-                <span className="text-sm tabular-nums text-[#7A8079]">{metric.format(slice.value)}</span>
-                <span className="w-11 text-right text-[15px] font-semibold tabular-nums text-[#1F2D27]">
+                <span className="sales-heading flex-1 text-[15px] font-medium">{slice.name}</span>
+                <span className="sales-muted text-sm tabular-nums">{metric.format(slice.value)}</span>
+                <span className="sales-heading w-11 text-right text-[15px] font-semibold tabular-nums">
                   {slice.percentage}%
                 </span>
               </div>
-              <div className="ml-6 mt-2 h-1.5 overflow-hidden rounded-full bg-[#F1ECE2]">
+              <div className="sales-progress-track ml-6 mt-2 h-1.5 overflow-hidden rounded-full">
                 <div
                   className="h-full rounded-full transition-all duration-500"
                   style={{

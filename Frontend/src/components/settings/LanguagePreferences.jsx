@@ -8,6 +8,7 @@ import {
   RotateCcw
 } from "lucide-react";
 
+import { applyTheme } from "../../utils/theme";
 import "./LanguagePreferences.css";
 
 const defaultPreferences = {
@@ -70,16 +71,19 @@ const translations = {
 };
 
 function LanguagePreferences({ language = "English", onLanguageChange }) {
-
   const t = translations[language] || translations.English;
 
   const [preferences, setPreferences] = useState(() => {
     try {
       const saved = localStorage.getItem("bizpilot-language-preferences");
-      return saved
-        ? { ...defaultPreferences, ...JSON.parse(saved) }
-        : defaultPreferences;
-    } catch {
+      const parsed = saved ? JSON.parse(saved) : {};
+      return {
+        ...defaultPreferences,
+        ...parsed,
+        theme: parsed.theme === "Dark" ? "Dark" : "Light",
+      };
+    } catch (error) {
+      console.error("Unable to read language and appearance preferences from local storage.", error);
       return defaultPreferences;
     }
   });
@@ -103,10 +107,7 @@ function LanguagePreferences({ language = "English", onLanguageChange }) {
         JSON.stringify(preferences)
       );
 
-      document.documentElement.setAttribute(
-        "data-theme",
-        preferences.theme.toLowerCase()
-      );
+      applyTheme(preferences.theme);
 
       setSavedPreferences(preferences);
 
@@ -119,7 +120,8 @@ function LanguagePreferences({ language = "English", onLanguageChange }) {
 
       setMessage(selectedTranslation.success);
 
-    } catch {
+    } catch (error) {
+      console.error("Unable to save language and appearance preferences.", error);
       setMessage(t.error);
     }
   };
@@ -192,6 +194,7 @@ function LanguagePreferences({ language = "English", onLanguageChange }) {
 
           <button
             type="button"
+            aria-pressed={preferences.theme === "Light"}
             className={`theme-option ${
               preferences.theme === "Light" ? "active" : ""
             }`}
@@ -208,6 +211,7 @@ function LanguagePreferences({ language = "English", onLanguageChange }) {
 
           <button
             type="button"
+            aria-pressed={preferences.theme === "Dark"}
             className={`theme-option ${
               preferences.theme === "Dark" ? "active" : ""
             }`}

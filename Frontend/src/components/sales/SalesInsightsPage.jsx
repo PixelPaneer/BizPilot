@@ -6,6 +6,7 @@ import {
   getTopSellingProducts,
 } from '../../data/salesData'
 import { resolveDateRange } from '../../utils/salesUtils'
+import './sales.css'
 import RevenueAnalysis from './RevenueAnalysis'
 import SalesByCategory from './SalesByCategory'
 import SalesInsightsHeader from './SalesInsightsHeader'
@@ -55,7 +56,7 @@ export default function SalesInsightsPage() {
   const topSelling = useMemo(() => getTopSellingProducts(productRange), [productRange])
 
   return (
-    <div className="mx-auto min-w-0 max-w-[1400px] space-y-6">
+    <div className="sales-insights-page mx-auto min-w-0 max-w-[1400px] space-y-6">
       <Reveal className="relative z-30">
         <SalesInsightsHeader dateRange={dateRange} onDateRangeChange={handlePageRangeChange} />
       </Reveal>
