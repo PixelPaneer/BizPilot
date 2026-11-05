@@ -49,7 +49,7 @@ function Header({
   onSignOut,
 }) {
   return (
-    <header className="header-divider sticky top-0 z-50 h-[var(--header-h)] bg-paper">
+    <header className="header-divider sticky top-0 z-50 h-[var(--header-h)] bg-[var(--cream)]">
       <div className="header-inner flex h-full items-center gap-3">
         <button
           type="button"

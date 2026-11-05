@@ -142,6 +142,7 @@ html[data-theme="dark"] {
 
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; }
+html { scrollbar-gutter: stable; }
 body {
   margin: 0;
   background: var(--page);
@@ -471,7 +472,7 @@ html[data-theme="dark"] .brand-logo-image { filter: brightness(1.35) saturate(0.
 .sidebar-open .sidebar { box-shadow: 8px 0 30px rgba(34, 51, 43, 0.15); }
 .sidebar-open .main { margin-left: 0; }
 
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .header__greeting { display: none; }
   .header__actions { margin-left: auto; }
 }
