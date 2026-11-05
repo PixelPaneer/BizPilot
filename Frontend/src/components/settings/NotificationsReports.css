@@ -1,0 +1,220 @@
+.notifications-page {
+  width: 100%;
+  padding: 10px 4px 30px;
+}
+
+.notifications-heading {
+  margin-bottom: 24px;
+}
+
+.notifications-heading h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--forest-green);
+  margin-bottom: 5px;
+}
+
+.notifications-heading p {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.notification-card {
+  background: var(--white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  margin-bottom: 20px;
+  box-shadow: var(--card-shadow);
+}
+
+.notification-section-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.notification-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: var(--light-sage);
+  color: var(--forest-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notification-section-heading h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.notification-option {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 17px 0;
+  border-top: 1px solid var(--border-color);
+}
+
+.notification-option-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--cream);
+  color: var(--forest-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.notification-option-text {
+  flex: 1;
+}
+
+.notification-option-text h4,
+.report-frequency h4 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 3px;
+}
+
+.notification-option-text p,
+.report-frequency p {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.notification-toggle {
+  width: 42px;
+  height: 23px;
+  border-radius: 20px;
+  background: #D6DCD6;
+  padding: 3px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  transition: background 0.2s ease;
+}
+
+.notification-toggle span {
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: white;
+  transition: transform 0.2s ease;
+}
+
+.notification-toggle.enabled {
+  background: var(--forest-green);
+}
+
+.notification-toggle.enabled span {
+  transform: translateX(19px);
+}
+
+.report-frequency {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding-top: 17px;
+  border-top: 1px solid var(--border-color);
+}
+
+.report-frequency select {
+  min-width: 145px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  color: var(--text-primary);
+  outline: none;
+}
+
+.report-frequency select:focus {
+  border-color: var(--forest-green);
+}
+
+.notification-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.notification-reset-btn,
+.notification-save-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 18px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  transition: 0.2s ease;
+}
+
+.notification-reset-btn {
+  background: var(--white);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.notification-reset-btn:hover {
+  background: var(--light-sage);
+  color: var(--forest-green);
+}
+
+.notification-save-btn {
+  background: var(--forest-green);
+  color: white;
+}
+
+.notification-save-btn:hover {
+  background: var(--dark-green);
+}
+
+.notification-success {
+  color: var(--forest-green);
+  background: var(--light-sage);
+  padding: 11px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  margin-top: 12px;
+}
+
+@media (max-width: 600px) {
+  .notification-card {
+    padding: 16px;
+  }
+
+  .notification-option {
+    gap: 10px;
+  }
+
+  .notification-option-text p {
+    font-size: 11px;
+  }
+
+  .report-frequency {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .report-frequency select {
+    width: 100%;
+  }
+
+  .notification-actions {
+    flex-wrap: wrap;
+  }
+}

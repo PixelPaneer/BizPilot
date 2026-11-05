@@ -1,0 +1,249 @@
+
+/* ===== BUSINESS PROFILE ===== */
+
+.business-profile {
+  width: 100%;
+}
+
+.section-intro {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.section-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: var(--light-sage);
+  color: var(--forest-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.section-intro h3 {
+  font-size: 18px;
+  color: var(--forest-green);
+  font-weight: 700;
+}
+
+.section-intro p {
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin-top: 3px;
+}
+
+/* Logo Upload */
+
+.logo-upload-section {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  background: var(--cream);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  margin-bottom: 25px;
+}
+
+.business-logo-preview {
+  width: 82px;
+  height: 82px;
+  flex-shrink: 0;
+  border-radius: 14px;
+  background: var(--light-sage);
+  color: var(--forest-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.business-logo-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.logo-upload-info h4 {
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.logo-upload-info p {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin: 5px 0 10px;
+}
+
+.upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 13px;
+  background: var(--white);
+  color: var(--forest-green);
+  border: 1px solid var(--border-color);
+  border-radius: 7px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.upload-btn:hover {
+  background: var(--light-sage);
+}
+
+/* Divider */
+
+.form-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 25px 0;
+}
+
+/* Form Heading */
+
+.form-section-title {
+  color: var(--forest-green);
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+/* Form Grid */
+
+.profile-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.form-group label {
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 11px 13px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--white);
+  color: var(--text-primary);
+  font-size: 12px;
+  transition: border 0.2s ease;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: var(--text-light);
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: var(--forest-green);
+  box-shadow: 0 0 0 3px rgba(24, 63, 53, 0.07);
+  outline: none;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.description-group {
+  margin-top: 22px;
+}
+
+/* Validation */
+
+.field-error {
+  color: #C34F43;
+  font-size: 11px;
+}
+
+/* Messages */
+
+.profile-message {
+  margin-top: 18px;
+  color: var(--forest-green);
+  background: var(--light-sage);
+  border-radius: 7px;
+  padding: 10px 13px;
+  font-size: 12px;
+}
+
+/* Buttons */
+
+.profile-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.profile-cancel-btn,
+.profile-save-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 18px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.profile-cancel-btn {
+  background: var(--white);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.profile-cancel-btn:hover {
+  background: var(--cream);
+}
+
+.profile-save-btn {
+  background: var(--forest-green);
+  color: white;
+}
+
+.profile-save-btn:hover {
+  background: var(--dark-green);
+}
+
+/* Responsive */
+
+@media (max-width: 650px) {
+  .profile-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .logo-upload-section {
+    align-items: flex-start;
+  }
+
+  .profile-actions {
+    flex-direction: column-reverse;
+  }
+
+  .profile-actions button {
+    width: 100%;
+  }
+}
