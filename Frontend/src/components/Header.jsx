@@ -57,7 +57,7 @@ function Header({
           aria-expanded={isMenuOpen}
           aria-controls="main-navigation"
           onClick={onMenuToggle}
-          className="burger flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-xl border border-line bg-white text-ink transition-colors hover:bg-sage-light"
+          className="burger flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-xl border border-line bg-white text-[var(--green)] transition-colors hover:bg-sage-light"
         >
           <Menu
             size={22}
@@ -67,8 +67,8 @@ function Header({
         </button>
         <BrandLogo />
         <div className="ml-3 hidden min-w-0 xl:block">
-          <h1 className="truncate text-xl font-bold text-ink">{heading.title}</h1>
-          <p className="truncate text-sm text-muted">{heading.subtitle}</p>
+          <h1 className="page-heading-title truncate">{heading.title}</h1>
+          <p className="page-heading-subtitle truncate">{heading.subtitle}</p>
         </div>
         <div className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-2 sm:gap-3">
           <GlobalSearch

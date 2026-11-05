@@ -54,11 +54,11 @@ function DashboardHeader({
       </button>
       <BrandLogo />
       <div className="header__greeting">
-        <h1>
+        <h1 className="page-heading-title">
           {getGreeting()}, {user.name}
           <span className="wave" aria-hidden="true">👋</span>
         </h1>
-        <p>Here's your business overview for today.</p>
+        <p className="page-heading-subtitle">Here's your business overview for today.</p>
       </div>
       <div className="header__actions">
         <div className="dropdown" ref={periodRef}>

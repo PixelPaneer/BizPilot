@@ -165,8 +165,8 @@ function App() {
         <main className="px-4 py-6 sm:px-6">
           <div className="mx-auto max-w-7xl space-y-6">
             <div className="xl:hidden">
-              <h1 className="text-2xl font-bold text-ink">{heading.title}</h1>
-              <p className="mt-1 text-sm text-muted">{heading.subtitle}</p>
+              <h1 className="page-heading-title">{heading.title}</h1>
+              <p className="page-heading-subtitle">{heading.subtitle}</p>
             </div>
             <InventorySummary products={products} />
             <ProductInventory
