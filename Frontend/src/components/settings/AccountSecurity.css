@@ -1,0 +1,269 @@
+.account-security-page {
+  width: 100%;
+  padding: 10px 4px 30px;
+}
+
+.account-security-heading {
+  margin-bottom: 24px;
+}
+
+.account-security-heading h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--forest-green);
+  margin-bottom: 5px;
+}
+
+.account-security-heading p {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.security-card {
+  background: var(--white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  margin-bottom: 20px;
+  box-shadow: var(--card-shadow);
+}
+
+.security-card-heading {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 20px;
+  color: var(--forest-green);
+}
+
+.security-card-heading h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.account-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+}
+
+.account-info-item {
+  padding: 15px;
+  background: var(--cream);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.account-info-item span,
+.session-info span {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.account-info-item strong,
+.session-info strong {
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.password-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 13px;
+}
+
+.password-heading h4,
+.two-factor-text h4 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.show-password-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  color: var(--forest-green);
+  font-size: 12px;
+}
+
+.password-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.password-fields input {
+  width: 100%;
+  padding: 11px 13px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  color: var(--text-primary);
+  outline: none;
+}
+
+.password-fields input:first-child {
+  grid-column: 1 / -1;
+}
+
+.password-fields input:focus {
+  border-color: var(--forest-green);
+}
+
+.security-message {
+  color: var(--forest-green);
+  background: var(--light-sage);
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  margin-top: 13px;
+}
+
+.security-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 17px;
+}
+
+.security-reset-btn,
+.security-save-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.security-reset-btn {
+  background: var(--white);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.security-save-btn {
+  background: var(--forest-green);
+  color: white;
+}
+
+.security-save-btn:hover {
+  background: var(--dark-green);
+}
+
+.two-factor-row {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  border-top: 1px solid var(--border-color);
+  margin-top: 22px;
+  padding-top: 20px;
+}
+
+.two-factor-icon {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: var(--light-sage);
+  color: var(--forest-green);
+  flex-shrink: 0;
+}
+
+.two-factor-text {
+  flex: 1;
+}
+
+.two-factor-text p,
+.session-description {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.security-toggle {
+  width: 42px;
+  height: 23px;
+  border-radius: 20px;
+  background: #D6DCD6;
+  padding: 3px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  transition: background 0.2s ease;
+}
+
+.security-toggle span {
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: white;
+  transition: transform 0.2s ease;
+}
+
+.security-toggle.enabled {
+  background: var(--forest-green);
+}
+
+.security-toggle.enabled span {
+  transform: translateX(19px);
+}
+
+.session-description {
+  margin-top: -10px;
+  margin-bottom: 17px;
+}
+
+.session-info {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.session-info > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 14px;
+  background: var(--cream);
+  border-radius: var(--radius-md);
+}
+
+.session-info .session-status {
+  color: var(--forest-green);
+}
+
+@media (max-width: 600px) {
+  .security-card {
+    padding: 16px;
+  }
+
+  .account-info-grid,
+  .session-info,
+  .password-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .password-fields input:first-child {
+    grid-column: auto;
+  }
+
+  .two-factor-row {
+    gap: 9px;
+  }
+
+  .security-actions {
+    flex-wrap: wrap;
+  }
+}

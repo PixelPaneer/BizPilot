@@ -5,19 +5,32 @@ import ProtectedRoute from './context/ProtectedRoute'
 import Dashboard from './pages/Dashboard'
 import DashboardHeader from './components/DashboardHeader'
 import DashboardSidebar from './components/DashboardSidebar'
+import HelpSupport from './components/settings/HelpSupport'
+import SettingsPage from './components/settings/SettingsPage'
 import Header from './components/Header'
 import InventorySummary from './components/InventorySummary'
 import LowStockAlertModal from './components/LowStockAlertModal'
 import NotFoundPage from './components/NotFoundPage'
-import PlaceholderPage from './components/PlaceholderPage'
 import ProductInventory from './components/ProductInventory'
 import Sidebar from './components/Sidebar'
 import SignIn from './SignIn'
+import { translations } from './context/language'
 import { currentUser } from './data/user'
 import { pages } from './data/pages'
 import { getStockStatus, getGreeting } from './utils/inventoryUtils'
 
 const SalesInsightsPage = lazy(() => import('./components/sales/SalesInsightsPage'))
+const LANGUAGE_PREFERENCES_KEY = 'bizpilot-language-preferences'
+
+function getSavedLanguage() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(LANGUAGE_PREFERENCES_KEY) || '{}')
+    return translations[saved.language] ? saved.language : 'English'
+  } catch (error) {
+    console.error('Unable to read language preferences from local storage.', error)
+    return 'English'
+  }
+}
 
 function needsAttention(product) {
   const status = getStockStatus(product)
@@ -55,6 +68,7 @@ function App() {
   const [period, setPeriod] = useState('month')
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [requestedProductId, setRequestedProductId] = useState(null)
+  const [language, setLanguage] = useState(getSavedLanguage)
 
   useEffect(() => {
     if (!isSidebarOpen) return
@@ -243,13 +257,17 @@ function App() {
       <Route
         path="/help"
         element={protectedPage(renderDashboardPage(
-          <PlaceholderPage title="Help & Support" text="Find answers and get in touch with support." />,
+          <HelpSupport language={language} />,
         ))}
       />
       <Route
         path="/settings"
         element={protectedPage(renderDashboardPage(
-          <PlaceholderPage title="Settings" text="Configure your BizPilot account and preferences." />,
+          <SettingsPage
+            language={language}
+            onLanguageChange={setLanguage}
+            t={translations[language] ?? translations.English}
+          />,
         ))}
       />
       <Route

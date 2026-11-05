@@ -1,0 +1,188 @@
+
+/* ===== SETTINGS PAGE ===== */
+
+.settings-page {
+  width: 100%;
+}
+
+/* Heading */
+
+.settings-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.settings-heading h2 {
+  color: var(--forest-green);
+  font-size: 23px;
+  font-weight: 700;
+}
+
+.settings-heading p {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-top: 5px;
+}
+
+/* Main Layout */
+
+.settings-layout {
+  display: grid;
+  grid-template-columns: 245px minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+/* Navigation Card */
+
+.settings-navigation {
+  background: var(--white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 20px 14px;
+  box-shadow: var(--card-shadow);
+}
+
+.settings-navigation h3 {
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--text-light);
+  padding: 0 10px;
+  margin-bottom: 15px;
+}
+
+.settings-nav-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 12px 10px;
+  margin-bottom: 5px;
+
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 8px;
+
+  font-size: 12px;
+  font-weight: 500;
+  text-align: left;
+
+  transition: 0.2s ease;
+}
+
+.settings-nav-item:hover {
+  background: var(--light-sage);
+  color: var(--forest-green);
+}
+
+.settings-nav-item.selected {
+  background: var(--light-sage);
+  color: var(--forest-green);
+  font-weight: 600;
+}
+
+/* Content Card */
+
+.settings-content {
+  min-width: 0;
+  background: var(--white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  box-shadow: var(--card-shadow);
+  min-height: 350px;
+}
+
+.settings-placeholder h3 {
+  font-size: 18px;
+  color: var(--forest-green);
+}
+
+.settings-placeholder p {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+/* Responsive */
+
+@media (max-width: 900px) {
+  .settings-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-navigation {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .settings-navigation h3 {
+    width: 100%;
+  }
+
+  .settings-nav-item {
+    width: auto;
+  }
+}
+
+@media (max-width: 550px) {
+  .settings-content {
+    padding: 18px;
+  }
+
+  .settings-nav-item {
+    font-size: 11px;
+    padding: 10px 8px;
+  }
+}
+
+/* Close button inside Settings heading */
+.settings-close-btn {
+  background: transparent;
+  border: none;
+  color: #35483D;
+  font-size: 26px;
+  font-weight: 400;
+  cursor: pointer;
+  padding: 2px 8px;
+  line-height: 1;
+  border-radius: 6px;
+}
+
+.settings-close-btn:hover {
+  background: #E6EEE3;
+  color: #315D46;
+}
+
+/* Align heading and cross */
+.settings-heading {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 12px;
+  min-height: 0;
+}
+
+.settings-close-btn {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #315D46;
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.settings-close-btn:hover {
+  background: #E6EEE3;
+}
