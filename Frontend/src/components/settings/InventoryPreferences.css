@@ -77,7 +77,7 @@
   height: 24px;
   flex-shrink: 0;
   border-radius: 30px;
-  background: #D8DDD8;
+  background: var(--toggle-track);
   padding: 3px;
   display: flex;
   align-items: center;
@@ -94,7 +94,7 @@
 }
 
 .toggle-switch.enabled {
-  background: var(--forest-green);
+  background: var(--accent-bg);
 }
 
 .toggle-switch.enabled span {

@@ -220,8 +220,8 @@
 }
 
 .profile-save-btn {
-  background: var(--forest-green);
-  color: white;
+  background: var(--accent-bg);
+  color: var(--accent-contrast);
 }
 
 .profile-save-btn:hover {

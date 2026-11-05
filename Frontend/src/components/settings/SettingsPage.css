@@ -143,7 +143,7 @@
 .settings-close-btn {
   background: transparent;
   border: none;
-  color: #35483D;
+  color: var(--text-primary);
   font-size: 26px;
   font-weight: 400;
   cursor: pointer;
@@ -153,8 +153,8 @@
 }
 
 .settings-close-btn:hover {
-  background: #E6EEE3;
-  color: #315D46;
+  background: var(--light-sage);
+  color: var(--forest-green);
 }
 
 /* Align heading and cross */
@@ -176,7 +176,7 @@
   border: none;
   border-radius: 6px;
   background: transparent;
-  color: #315D46;
+  color: var(--forest-green);
   font-size: 17px;
   line-height: 1;
   cursor: pointer;
@@ -184,5 +184,5 @@
 }
 
 .settings-close-btn:hover {
-  background: #E6EEE3;
+  background: var(--light-sage);
 }

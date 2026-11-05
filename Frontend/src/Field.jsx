@@ -1,6 +1,6 @@
 /* Labelled input with a leading icon, optional prefix (e.g. +91) and optional trailing control. */
 const wrap =
-  "flex h-11 items-center gap-2.5 rounded-xl border bg-white px-3.5 text-muted transition " +
+  "flex h-11 items-center gap-2.5 rounded-xl border bg-[var(--auth-input)] px-3.5 text-muted transition " +
   "focus-within:border-brand-500 focus-within:text-brand-700 focus-within:ring-4 focus-within:ring-mint-100";
 
 export default function Field({ id, label, icon: Icon, prefix, trailing, error, className = "", ...inputProps }) {
