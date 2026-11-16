@@ -4,7 +4,7 @@ import { User, Mail, Lock, Eye, EyeOff, Chat as WhatsApp, Arrow } from "./icons.
 
 const isValidMobileNumber = (number) => /^[6-9]\d{9}$/.test(number);
 
-export default function SignUp({ onSignIn }) {
+export default function SignUp({ onSignIn, onAccountCreated }) {
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", whatsapp: "", password: "" });
   const [show, setShow] = useState(false);
   const [errors, setErrors] = useState({});
@@ -42,10 +42,9 @@ export default function SignUp({ onSignIn }) {
     setErrors(e);
     if (Object.keys(e).length) return;
     setLoading(true);
-    // TODO: replace with your API call, e.g. await api.post("/auth/register", { ...form, whatsapp: "+91" + form.whatsapp })
     await new Promise((r) => setTimeout(r, 900));
     setLoading(false);
-    console.log("Account created:", { ...form, password: undefined });
+    onAccountCreated?.();
   };
 
   return (
