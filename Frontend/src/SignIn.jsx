@@ -243,7 +243,10 @@ export default function SignIn({ onSignIn }) {
             <div className="mb-3 flex justify-center">
               <Logo className="h-16 w-40" />
             </div>
-            <SignUp onSignIn={() => setSignIn(true)} />
+            <SignUp
+              onSignIn={() => setSignIn(true)}
+              onAccountCreated={onSignIn}
+            />
           </div>
         </section>
       )}
