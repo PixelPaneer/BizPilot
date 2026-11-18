@@ -57,6 +57,8 @@ function App() {
   const { isAuthenticated, signIn, signOut } = useAuth()
   const {
     products,
+    isLoading,
+    loadError,
     stockAlert,
     addProduct,
     updateProduct,
@@ -171,6 +173,8 @@ function App() {
             <InventorySummary products={products} />
             <ProductInventory
               products={products}
+              isLoading={isLoading}
+              loadError={loadError}
               requestedProductId={requestedProductId}
               onRequestHandled={() => setRequestedProductId(null)}
               onAddProduct={addProduct}
