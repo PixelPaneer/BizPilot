@@ -1,0 +1,115 @@
+:root {
+  --sales-surface: #ffffff;
+  --sales-surface-raised: #f7f3ea;
+  --sales-surface-soft: #f3efe6;
+  --sales-surface-hover: #fbf8f1;
+  --sales-accent-soft: #e8efe6;
+  --sales-progress-track: #f1ece2;
+  --sales-border: #eae4d8;
+  --sales-heading: #1f2d27;
+  --sales-text: #5e655f;
+  --sales-muted: #7a8079;
+  --sales-accent: #244f3d;
+  --sales-accent-contrast: #ffffff;
+  --sales-shadow: 0 1px 2px rgb(36 79 61 / 4%), 0 12px 32px -16px rgb(36 79 61 / 16%);
+  --sales-menu-shadow: 0 12px 32px rgb(36 79 61 / 12%);
+  --sales-chart-grid: #efeae0;
+  --sales-chart-current: #244f3d;
+  --sales-chart-previous: #e6a18a;
+  --sales-chart-cursor: #d9d2c3;
+}
+
+html[data-theme="dark"] {
+  --sales-surface: #24332b;
+  --sales-surface-raised: #2b3c32;
+  --sales-surface-soft: #2d3d33;
+  --sales-surface-hover: #344a3d;
+  --sales-accent-soft: #344a3d;
+  --sales-progress-track: #3a4b40;
+  --sales-border: #394a41;
+  --sales-heading: #e7eee9;
+  --sales-text: #c3cec6;
+  --sales-muted: #a4b2a9;
+  --sales-accent: #a8c3a0;
+  --sales-accent-contrast: #19231e;
+  --sales-shadow: 0 1px 2px rgb(0 0 0 / 12%), 0 12px 32px -16px rgb(0 0 0 / 28%);
+  --sales-menu-shadow: 0 12px 32px rgb(0 0 0 / 32%);
+  --sales-chart-grid: #3a4b40;
+  --sales-chart-current: #a8c3a0;
+  --sales-chart-previous: #e6a18a;
+  --sales-chart-cursor: #718077;
+}
+
+.sales-card {
+  border-color: var(--sales-border);
+  background-color: var(--sales-surface);
+  color: var(--sales-heading);
+  box-shadow: var(--sales-shadow);
+}
+
+.sales-card-header-icon {
+  background-color: var(--sales-accent-soft);
+  color: var(--sales-accent);
+}
+
+.sales-heading { color: var(--sales-heading); }
+.sales-text { color: var(--sales-text); }
+.sales-muted { color: var(--sales-muted); }
+.sales-accent { color: var(--sales-accent); }
+
+.sales-date-trigger,
+.sales-date-input {
+  border-color: var(--sales-border);
+  background-color: var(--sales-surface);
+  color: var(--sales-heading);
+}
+
+.sales-date-trigger:hover,
+.sales-option:hover,
+.sales-view-inactive:hover,
+.sales-view-all:hover {
+  background-color: var(--sales-surface-hover);
+}
+
+.sales-date-menu {
+  border-color: var(--sales-border);
+  background-color: var(--sales-surface);
+  box-shadow: var(--sales-menu-shadow);
+}
+
+.sales-option { color: var(--sales-heading); }
+.sales-option-active { background-color: var(--sales-accent-soft); color: var(--sales-accent); }
+.sales-date-label { color: var(--sales-muted); }
+.sales-date-icon,
+.sales-view-all { color: var(--sales-accent); }
+
+.sales-date-badge {
+  background-color: var(--sales-accent-soft);
+  color: var(--sales-accent);
+}
+
+.sales-view-toggle,
+.sales-category-pill {
+  background-color: var(--sales-surface-soft);
+}
+
+.sales-view-active {
+  background-color: var(--sales-accent);
+  color: var(--sales-accent-contrast);
+}
+
+.sales-view-inactive { color: var(--sales-text); }
+.sales-progress-track { background-color: var(--sales-progress-track); }
+.sales-legend-active { background-color: var(--sales-accent-soft); }
+.sales-table-head { background-color: var(--sales-surface-raised); }
+.sales-table-row { border-color: var(--sales-progress-track); }
+.sales-table-row:hover { background-color: var(--sales-surface-hover); }
+.sales-category-pill { color: var(--sales-text); }
+.sales-rank-first { background-color: var(--sales-accent); color: var(--sales-accent-contrast); }
+.sales-rank-other { background-color: var(--sales-accent-soft); color: var(--sales-accent); }
+.sales-rank-muted { color: var(--sales-muted); }
+.sales-tooltip {
+  border-color: var(--sales-border);
+  background-color: var(--sales-surface);
+  box-shadow: var(--sales-menu-shadow);
+}
