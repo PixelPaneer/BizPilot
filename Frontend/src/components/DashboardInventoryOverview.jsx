@@ -3,6 +3,25 @@ import { ArrowRight } from 'lucide-react'
 import { toPercent } from '../utils/inventoryUtils'
 
 function DashboardInventoryOverview({ stats }) {
+  if (stats.total === 0) {
+    return (
+      <section className="card">
+        <div className="card__head">
+          <div>
+            <h2>Inventory Overview</h2>
+            <p>Current stock status across all products</p>
+          </div>
+          <Link to="/inventory" className="link-more">
+            View inventory <ArrowRight size={14} />
+          </Link>
+        </div>
+        <p className="py-6 text-center text-sm text-muted">
+          You have no products yet. Add your first product to see your stock status here.
+        </p>
+      </section>
+    )
+  }
+
   const inPct = toPercent(stats.inStock, stats.total)
   const lowPct = toPercent(stats.low, stats.total)
   const outPct = Math.max(0, 100 - inPct - lowPct)

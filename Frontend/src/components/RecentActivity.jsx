@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ArrowDown, ArrowRight, ArrowUp, Box, FileText } from 'lucide-react'
+import { ArrowDown, ArrowRight, ArrowUp, Box, FileText, Undo2 } from 'lucide-react'
 import { timeAgo } from '../utils/inventoryUtils'
 
 const TYPE_ICON = {
@@ -7,6 +7,7 @@ const TYPE_ICON = {
   stock_removed: { Icon: ArrowDown, tone: 'red' },
   product_added: { Icon: Box, tone: 'gold' },
   bill_generated: { Icon: FileText, tone: 'sage' },
+  sale_voided: { Icon: Undo2, tone: 'red' },
 }
 
 export default function RecentActivity({ activities }) {
@@ -21,6 +22,12 @@ export default function RecentActivity({ activities }) {
           View all <ArrowRight size={14} />
         </Link>
       </div>
+
+      {activities.length === 0 && (
+        <p className="py-6 text-center text-sm text-muted">
+          No activity yet. Changes to your products and stock will show up here.
+        </p>
+      )}
 
       <ul className="activity-list">
         {activities.map((a) => {

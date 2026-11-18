@@ -130,6 +130,7 @@ export function InventoryProvider({ children }) {
     adjustStock,
     deleteProduct,
     openSummaryAlert,
+    refreshProducts,
     closeStockAlert: () => setStockAlert(null),
   }
 

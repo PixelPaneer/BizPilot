@@ -1,10 +1,8 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
-import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
-import { useAuth, useInventory } from './context/contextValues'
+import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
+import { useAuth, useInventory, useProfile } from './context/contextValues'
 import ProtectedRoute from './context/ProtectedRoute'
 import Dashboard from './pages/Dashboard'
-import DashboardHeader from './components/DashboardHeader'
-import DashboardSidebar from './components/DashboardSidebar'
 import HelpSupport from './components/settings/HelpSupport'
 import SettingsPage from './components/settings/SettingsPage'
 import Header from './components/Header'
@@ -12,12 +10,12 @@ import InventorySummary from './components/InventorySummary'
 import LowStockAlertModal from './components/LowStockAlertModal'
 import NotFoundPage from './components/NotFoundPage'
 import ProductInventory from './components/ProductInventory'
+import UpdateStockPage from './components/stock/UpdateStockPage'
 import Sidebar from './components/Sidebar'
 import SignIn from './SignIn'
 import { translations } from './context/language'
-import { currentUser } from './data/user'
 import { pages } from './data/pages'
-import { getStockStatus, getGreeting } from './utils/inventoryUtils'
+import { getGreeting, getStockStatus } from './utils/inventoryUtils'
 
 const SalesInsightsPage = lazy(() => import('./components/sales/SalesInsightsPage'))
 const LANGUAGE_PREFERENCES_KEY = 'bizpilot-language-preferences'
@@ -37,28 +35,26 @@ function needsAttention(product) {
   return status === 'low-stock' || status === 'out-of-stock'
 }
 
-function getPageHeading(pageId) {
+// The title and subtitle shown in the header (and above the page on small screens). The
+// dashboard greets the owner by name; every other page uses its own name.
+function getPageHeading(pageId, profile) {
   const page = pages.find((item) => item.id === pageId) ?? pages[0]
   if (page.id === 'dashboard') {
-    const firstName = currentUser.name.split(' ')[0]
-    return { title: `${getGreeting()}, ${firstName} 👋`, subtitle: page.subtitle }
+    const name = profile ? `, ${profile.firstName}` : ''
+    return { title: `${getGreeting()}${name} 👋`, subtitle: page.subtitle }
   }
   return { title: page.label, subtitle: page.subtitle }
 }
 
-function getPageId(pathname) {
-  if (pathname === '/') return 'dashboard'
-  return pathname.slice(1)
-}
-
 function App() {
   const navigate = useNavigate()
-  const { pathname } = useLocation()
   const { isAuthenticated, signIn, signOut } = useAuth()
+  const { profile } = useProfile()
   const {
     products,
     isLoading,
     loadError,
+    refreshProducts,
     stockAlert,
     addProduct,
     updateProduct,
@@ -108,45 +104,12 @@ function App() {
     navigate('/dashboard', { replace: true })
   }
 
-  function renderDashboardPage(content) {
+  // Every page has the same header, menu and low-stock pop-up. Only the heading differs.
+  function renderChrome(heading, activePage) {
     const alertCount = products.filter(needsAttention).length
 
     return (
-      <div className={`app ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
-        <DashboardSidebar open={isSidebarOpen} onNavigate={() => setIsSidebarOpen(false)} />
-        <div className="main">
-          <DashboardHeader
-            onToggleSidebar={() => setIsSidebarOpen((open) => !open)}
-            sidebarOpen={isSidebarOpen}
-            period={period}
-            onPeriodChange={setPeriod}
-            alertCount={alertCount}
-            onOpenAlerts={openSummaryAlert}
-            onSignOut={handleSignOut}
-          />
-          <main className="content">{content}</main>
-        </div>
-        {stockAlert && (
-          <LowStockAlertModal
-            alert={stockAlert}
-            onClose={closeStockAlert}
-            onViewInventory={() => {
-              closeStockAlert()
-              handleNavigate('inventory')
-            }}
-          />
-        )}
-      </div>
-    )
-  }
-
-  function renderInventoryPage() {
-    const pageId = getPageId(pathname)
-    const heading = getPageHeading(pageId)
-    const alertCount = products.filter(needsAttention).length
-
-    return (
-      <div className="min-h-screen bg-cream">
+      <>
         <Header
           products={products}
           heading={heading}
@@ -159,17 +122,68 @@ function App() {
           onSignOut={handleSignOut}
         />
         <Sidebar
-          activePage={pageId}
+          activePage={activePage}
           onNavigate={handleNavigate}
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
         />
+      </>
+    )
+  }
+
+  function renderAlertModal() {
+    if (!stockAlert) return null
+
+    return (
+      <LowStockAlertModal
+        alert={stockAlert}
+        onClose={closeStockAlert}
+        onViewInventory={() => {
+          closeStockAlert()
+          handleNavigate('inventory')
+        }}
+      />
+    )
+  }
+
+  // The header only has room for the heading on wide screens; below that it appears here.
+  function renderSmallScreenHeading(heading, spacing = '') {
+    return (
+      <div className={`${spacing} xl:hidden`}>
+        <h1 className="page-heading-title">{heading.title}</h1>
+        <p className="page-heading-subtitle">{heading.subtitle}</p>
+      </div>
+    )
+  }
+
+  // Help and Settings draw their own (translated) title inside the page, so the extra small-screen
+  // heading is only added for pages that have none (the dashboard).
+  function renderDashboardPage(pageId, content, showSmallScreenHeading = false) {
+    const heading = getPageHeading(pageId, profile)
+
+    return (
+      <div className="app">
+        {renderChrome(heading, pageId)}
+        <div className="main">
+          <main className="content">
+            {showSmallScreenHeading && renderSmallScreenHeading(heading, 'mb-5')}
+            {content}
+          </main>
+        </div>
+        {renderAlertModal()}
+      </div>
+    )
+  }
+
+  function renderInventoryPage() {
+    const heading = getPageHeading('inventory', profile)
+
+    return (
+      <div className="min-h-screen bg-cream">
+        {renderChrome(heading, 'inventory')}
         <main className="px-4 py-6 sm:px-6">
           <div className="mx-auto max-w-7xl space-y-6">
-            <div className="xl:hidden">
-              <h1 className="page-heading-title">{heading.title}</h1>
-              <p className="page-heading-subtitle">{heading.subtitle}</p>
-            </div>
+            {renderSmallScreenHeading(heading)}
             <InventorySummary products={products} />
             <ProductInventory
               products={products}
@@ -184,43 +198,43 @@ function App() {
             />
           </div>
         </main>
-        {stockAlert && (
-          <LowStockAlertModal
-            alert={stockAlert}
-            onClose={closeStockAlert}
-            onViewInventory={() => {
-              closeStockAlert()
-              handleNavigate('inventory')
-            }}
-          />
-        )}
+        {renderAlertModal()}
+      </div>
+    )
+  }
+
+  function renderUpdateStockPage() {
+    const heading = {
+      title: 'Update Stock',
+      subtitle: 'Record sales and purchases to keep your stock accurate.',
+    }
+
+    return (
+      <div className="min-h-screen bg-cream">
+        {renderChrome(heading, 'inventory')}
+        <main className="px-4 py-6 sm:px-6">
+          <div className="mx-auto max-w-5xl space-y-6">
+            {renderSmallScreenHeading(heading)}
+            <UpdateStockPage
+              products={products}
+              isLoading={isLoading}
+              loadError={loadError}
+              onRefresh={refreshProducts}
+              onNavigate={handleNavigate}
+            />
+          </div>
+        </main>
+        {renderAlertModal()}
       </div>
     )
   }
 
   function renderSalesPage() {
-    const heading = getPageHeading('analytics')
-    const alertCount = products.filter(needsAttention).length
+    const heading = getPageHeading('analytics', profile)
 
     return (
       <div className="min-h-screen bg-cream">
-        <Header
-          products={products}
-          heading={heading}
-          alertCount={alertCount}
-          isMenuOpen={isSidebarOpen}
-          onMenuToggle={() => setIsSidebarOpen((open) => !open)}
-          onNavigate={handleNavigate}
-          onSelectProduct={handleSelectProduct}
-          onOpenAlerts={openSummaryAlert}
-          onSignOut={handleSignOut}
-        />
-        <Sidebar
-          activePage="analytics"
-          onNavigate={handleNavigate}
-          isOpen={isSidebarOpen}
-          onClose={() => setIsSidebarOpen(false)}
-        />
+        {renderChrome(heading, 'analytics')}
         <main className="px-4 py-6 sm:px-6">
           <Suspense
             fallback={
@@ -235,16 +249,7 @@ function App() {
             <SalesInsightsPage />
           </Suspense>
         </main>
-        {stockAlert && (
-          <LowStockAlertModal
-            alert={stockAlert}
-            onClose={closeStockAlert}
-            onViewInventory={() => {
-              closeStockAlert()
-              handleNavigate('inventory')
-            }}
-          />
-        )}
+        {renderAlertModal()}
       </div>
     )
   }
@@ -255,18 +260,21 @@ function App() {
     <Routes>
       <Route path="/signIn" element={<SignIn onSignIn={handleSignIn} />} />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="/dashboard" element={protectedPage(renderDashboardPage(<Dashboard period={period} />))} />
+      <Route path="/dashboard" element={protectedPage(renderDashboardPage('dashboard', <Dashboard period={period} onPeriodChange={setPeriod} />, true))} />
       <Route path="/inventory" element={protectedPage(renderInventoryPage())} />
+      <Route path="/inventory/update-stock" element={protectedPage(renderUpdateStockPage())} />
       <Route path="/analytics" element={protectedPage(renderSalesPage())} />
       <Route
         path="/help"
         element={protectedPage(renderDashboardPage(
+          'help',
           <HelpSupport language={language} />,
         ))}
       />
       <Route
         path="/settings"
         element={protectedPage(renderDashboardPage(
+          'settings',
           <SettingsPage
             language={language}
             onLanguageChange={setLanguage}

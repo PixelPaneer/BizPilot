@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { InventoryProvider } from './context/InventoryContext'
+import { ProfileProvider } from './context/ProfileContext'
 import { initializeTheme } from './utils/theme'
 import '@fontsource-variable/plus-jakarta-sans'
 import './index.css'
@@ -14,9 +15,11 @@ createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <InventoryProvider>
-          <App />
-        </InventoryProvider>
+        <ProfileProvider>
+          <InventoryProvider>
+            <App />
+          </InventoryProvider>
+        </ProfileProvider>
       </AuthProvider>
     </BrowserRouter>
   </StrictMode>,

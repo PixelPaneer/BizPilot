@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Plus } from 'lucide-react'
+import { Database, Plus } from 'lucide-react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import InventoryTabs from './InventoryTabs'
 import InventoryToolbar from './InventoryToolbar'
 import ProductTable from './ProductTable'
@@ -63,6 +64,29 @@ function ProductInventory({
   useEffect(() => {
     if (requestedProductId && onRequestHandled) onRequestHandled()
   }, [requestedProductId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // The dashboard's "Add Product" tile links here with ?action=add: open the Add Product form,
+  // then remove the parameter so a refresh or the back button does not open it again.
+  const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const addRequested = searchParams.get('action') === 'add'
+  const [seenAddRequest, setSeenAddRequest] = useState(false)
+  if (addRequested !== seenAddRequest) {
+    setSeenAddRequest(addRequested)
+    if (addRequested) setModal('add')
+  }
+
+  useEffect(() => {
+    if (!addRequested) return
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current)
+        next.delete('action')
+        return next
+      },
+      { replace: true },
+    )
+  }, [addRequested, setSearchParams])
 
   const selectedProduct = products.find((product) => product.id === selectedProductId)
 
@@ -156,6 +180,14 @@ function ProductInventory({
             tabLabel={tabLabels[activeTab]}
             filters={{ searchQuery, category: activeCategory, sortOrder }}
           />
+          <button
+            type="button"
+            onClick={() => navigate('/inventory/update-stock')}
+            className="flex flex-1 items-center justify-center gap-2 rounded-full border border-line px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-cream sm:flex-none"
+          >
+            <Database size={16} aria-hidden="true" />
+            Update Stock
+          </button>
           <button
             type="button"
             onClick={() => setModal('add')}

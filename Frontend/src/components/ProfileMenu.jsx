@@ -1,7 +1,10 @@
 import { useRef, useState } from 'react'
 import { ChevronDown, LogOut } from 'lucide-react'
-import { currentUser } from '../data/user'
+import { useProfile } from '../context/contextValues'
 import { useClickOutside } from '../utils/useClickOutside'
+
+// There is one kind of account: the owner of the shop.
+const ROLE_LABEL = 'Business Owner'
 
 function getInitials(name) {
   const words = name.trim().split(/\s+/).filter(Boolean)
@@ -13,7 +16,9 @@ function getInitials(name) {
 function ProfileMenu({ onSignOut }) {
   const [isOpen, setIsOpen] = useState(false)
   const menuRef = useRef(null)
-  const initials = getInitials(currentUser.name)
+  const { profile } = useProfile()
+  const name = profile ? `${profile.firstName} ${profile.lastName}`.trim() : ''
+  const initials = name ? getInitials(name) : '·'
   useClickOutside(menuRef, () => setIsOpen(false))
 
   function handleSignOut() {
@@ -34,8 +39,8 @@ function ProfileMenu({ onSignOut }) {
           {initials}
         </span>
         <span className="hidden text-left md:block">
-          <span className="block text-sm font-semibold leading-tight text-ink">{currentUser.name}</span>
-          <span className="block text-xs leading-tight text-muted">{currentUser.role}</span>
+          <span className="block text-sm font-semibold leading-tight text-ink">{name || '...'}</span>
+          <span className="block text-xs leading-tight text-muted">{ROLE_LABEL}</span>
         </span>
         <ChevronDown size={16} aria-hidden="true" className="hidden text-muted md:block" />
       </button>
@@ -45,9 +50,10 @@ function ProfileMenu({ onSignOut }) {
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-forest text-xl font-semibold text-white">
               {initials}
             </div>
-            <p className="mt-3 font-semibold text-ink">{currentUser.name}</p>
-            <p className="text-sm text-muted">{currentUser.role}</p>
-            <p className="text-sm text-muted">{currentUser.email}</p>
+            <p className="mt-3 font-semibold text-ink">{name || '...'}</p>
+            <p className="text-sm text-muted">{ROLE_LABEL}</p>
+            {profile?.businessName && <p className="text-sm text-muted">{profile.businessName}</p>}
+            {profile?.email && <p className="text-sm text-muted">{profile.email}</p>}
           </div>
           <button
             type="button"

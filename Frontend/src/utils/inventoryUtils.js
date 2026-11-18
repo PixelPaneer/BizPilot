@@ -11,17 +11,6 @@ export function getStockStatus(product) {
   return 'in'
 }
 
-export function getInventoryStats(products) {
-  const stats = { total: products.length, inStock: 0, low: 0, out: 0 }
-  products.forEach((product) => {
-    const status = getStockStatus(product)
-    if (status === 'out') stats.out += 1
-    else if (status === 'low') stats.low += 1
-    else stats.inStock += 1
-  })
-  return stats
-}
-
 export function getStockCounts(products) {
   const counts = { total: products.length, inStock: 0, lowStock: 0, outOfStock: 0 }
   products.forEach((product) => {
