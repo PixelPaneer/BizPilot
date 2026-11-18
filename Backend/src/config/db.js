@@ -20,4 +20,29 @@ export async function checkDatabaseConnection() {
   return result.rows[0].connected === 1;
 }
 
+export async function withTransaction(fn) {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+    const result = await fn(client);
+    await client.query("COMMIT");
+    return result;
+  } catch (error) {
+    try {
+      await client.query("ROLLBACK");
+    } catch (rollbackError) {
+      throw new AggregateError(
+        [error, rollbackError],
+        "Transaction failed and rollback also failed",
+        { cause: error }
+      );
+    }
+
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 export default pool;

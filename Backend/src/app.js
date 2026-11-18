@@ -4,6 +4,10 @@ import helmet from "helmet";
 import { env } from "./config/env.js";
 import analyticsRoutes from "./routes/analytics.routes.js";
 import cookieParser from "cookie-parser";
+import productRoutes from "./routes/product.routes.js";
+import inventoryRoutes from "./routes/inventory.routes.js";
+import { authenticate } from "./middleware/auth.middleware.js";
+import { requireBusinessContext } from "./middleware/requireBusinessContext.js";
 
 const app = express();
 
@@ -27,6 +31,18 @@ app.get("/health", (req, res) => {
  * req.user.businessId has already been populated.
  */
 app.use("/api/analytics", analyticsRoutes);
+app.use(
+  "/api/v1/products",
+  authenticate,
+  requireBusinessContext,
+  productRoutes
+);
+app.use(
+  "/api/v1/inventory",
+  authenticate,
+  requireBusinessContext,
+  inventoryRoutes
+);
 
 app.use((req, res) => {
   res.status(404).json({ success: false, message: "Route not found" });
@@ -44,14 +60,20 @@ app.use((error, req, res, next) => {
     console.error(error);
   }
 
-  res.status(status).json({
+  const response = {
     success: false,
     message:
       status === 500
         ? "Internal server error"
         : error.message,
     errors: error.errors || [],
-  });
+  };
+
+  if (error.code !== undefined) {
+    response.code = error.code;
+  }
+
+  res.status(status).json(response);
 });
 
 export default app;

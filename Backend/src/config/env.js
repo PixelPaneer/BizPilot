@@ -30,6 +30,7 @@ export const env = {
   pgSsl:
     process.env.PGSSL === "true" ||
     process.env.DB_SSL === "true",
+  devUserId: process.env.DEV_USER_ID?.trim() || null,
 
   // Authentication will be configured later.
   jwtSecret: process.env.JWT_SECRET,
