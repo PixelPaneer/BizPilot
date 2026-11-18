@@ -2,6 +2,70 @@
 import pool from "../config/db.js";
 import { ApiError } from "../utils/ApiError.js";
 
+const TIME_ZONE = "Asia/Kolkata";
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+// --------------------------------------------------
+// IST DATE HELPERS
+// --------------------------------------------------
+
+function getTodayISTDate() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+
+  const values = Object.fromEntries(
+    parts.map(({ type, value }) => [type, value])
+  );
+
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function addCalendarDays(dateString, days) {
+  const [year, month, day] = dateString.split("-").map(Number);
+
+  const date = new Date(
+    Date.UTC(year, month - 1, day + days)
+  );
+
+  return date.toISOString().slice(0, 10);
+}
+
+function isValidDateOnly(value) {
+  if (typeof value !== "string") return false;
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false;
+  }
+
+  const [year, month, day] = value.split("-").map(Number);
+
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  return date.toISOString().slice(0, 10) === value;
+}
+
+// Converts IST midnight into the corresponding UTC instant.
+// Example: 2026-11-18 00:00 IST = 2026-11-17 18:30 UTC.
+function istMidnightToUTC(dateString) {
+  if (!isValidDateOnly(dateString)) {
+    throw new ApiError(400, "Invalid date");
+  }
+
+  const [year, month, day] = dateString.split("-").map(Number);
+
+  return new Date(
+    Date.UTC(year, month - 1, day) - 330 * 60 * 1000
+  );
+}
+
+function iso(date) {
+  return date.toISOString();
+}
+
 // --------------------------------------------------
 // DATE RANGE
 // --------------------------------------------------
@@ -10,65 +74,52 @@ function getDateRange({
   period = "last30",
   startDate,
   endDate,
-}) {
-  const now = new Date();
+} = {}) {
+  const today = getTodayISTDate();
 
-  const today = new Date(
-    Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      now.getUTCDate()
-    )
-  );
-
-  let start;
-  let endExclusive;
+  let startDateIST;
+  let endDateExclusiveIST;
 
   if (period === "custom") {
-    if (!startDate || !endDate) {
+    if (
+      !isValidDateOnly(startDate) ||
+      !isValidDateOnly(endDate)
+    ) {
       throw new ApiError(
         400,
-        "startDate and endDate are required for custom period"
+        "Valid startDate and endDate are required for custom period"
       );
     }
 
-    start = new Date(`${startDate}T00:00:00.000Z`);
+    if (startDate > endDate) {
+      throw new ApiError(
+        400,
+        "startDate cannot be after endDate"
+      );
+    }
 
-    endExclusive = new Date(
-      new Date(`${endDate}T00:00:00.000Z`).getTime() +
-        86400000
-    );
+    startDateIST = startDate;
+    endDateExclusiveIST = addCalendarDays(endDate, 1);
   } else if (period === "thisMonth") {
-    start = new Date(
-      Date.UTC(
-        today.getUTCFullYear(),
-        today.getUTCMonth(),
-        1
-      )
-    );
-
-    endExclusive = new Date(today.getTime() + 86400000);
+    startDateIST = `${today.slice(0, 7)}-01`;
+    endDateExclusiveIST = addCalendarDays(today, 1);
   } else {
     const days = {
       last7: 7,
       last30: 30,
       last90: 90,
-    }[period] ?? 30;
+    }[period];
 
-    start = new Date(
-      today.getTime() - (days - 1) * 86400000
-    );
+    if (!days) {
+      throw new ApiError(400, "Invalid analytics period");
+    }
 
-    endExclusive = new Date(today.getTime() + 86400000);
+    startDateIST = addCalendarDays(today, -(days - 1));
+    endDateExclusiveIST = addCalendarDays(today, 1);
   }
 
-  if (
-    Number.isNaN(start.getTime()) ||
-    Number.isNaN(endExclusive.getTime()) ||
-    start >= endExclusive
-  ) {
-    throw new ApiError(400, "Invalid date range");
-  }
+  const start = istMidnightToUTC(startDateIST);
+  const endExclusive = istMidnightToUTC(endDateExclusiveIST);
 
   const duration = endExclusive.getTime() - start.getTime();
 
@@ -78,10 +129,6 @@ function getDateRange({
     previousStart: new Date(start.getTime() - duration),
     previousEndExclusive: start,
   };
-}
-
-function iso(date) {
-  return date.toISOString();
 }
 
 // --------------------------------------------------
@@ -104,6 +151,41 @@ const GROUPINGS = {
 };
 
 // --------------------------------------------------
+// PERIOD LABEL
+// --------------------------------------------------
+
+function formatPeriodLabel(bucketDate, group) {
+  const [year, month, day] = bucketDate.split("-").map(Number);
+
+  // The date is already an IST calendar date.
+  // UTC is used here only to format its date components
+  // without introducing another timezone conversion.
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  if (group === "monthly") {
+    return date.toLocaleDateString("en-IN", {
+      month: "short",
+      year: "numeric",
+      timeZone: "UTC",
+    });
+  }
+
+  if (group === "weekly") {
+    return `Week of ${date.toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      timeZone: "UTC",
+    })}`;
+  }
+
+  return date.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  });
+}
+
+// --------------------------------------------------
 // SHARED COMPARISON QUERY
 // --------------------------------------------------
 
@@ -116,36 +198,60 @@ async function getComparisonSeries(businessId, range, group) {
 
   const { rows } = await pool.query(
     `WITH current_calendar AS (
-       SELECT bucket
+       SELECT
+         bucket,
+         ROW_NUMBER() OVER (ORDER BY bucket) AS bucket_no
        FROM generate_series(
          date_trunc(
            $4,
-           $2::timestamptz AT TIME ZONE 'UTC'
+           $2::timestamptz AT TIME ZONE 'Asia/Kolkata'
          ),
          date_trunc(
            $4,
            ($3::timestamptz - interval '1 microsecond')
-             AT TIME ZONE 'UTC'
+             AT TIME ZONE 'Asia/Kolkata'
          ),
          $5::interval
-       ) AS bucket
+       ) AS gs(bucket)
+     ),
+
+     previous_calendar AS (
+       SELECT
+         bucket,
+         ROW_NUMBER() OVER (ORDER BY bucket) AS bucket_no
+       FROM generate_series(
+         date_trunc(
+           $4,
+           $6::timestamptz AT TIME ZONE 'Asia/Kolkata'
+         ),
+         date_trunc(
+           $4,
+           ($2::timestamptz - interval '1 microsecond')
+             AT TIME ZONE 'Asia/Kolkata'
+         ),
+         $5::interval
+       ) AS gs(bucket)
      ),
 
      current_totals AS (
        SELECT
          date_trunc(
            $4,
-           s.sale_date AT TIME ZONE 'UTC'
+           s.sale_date AT TIME ZONE 'Asia/Kolkata'
          ) AS bucket,
          SUM(si.revenue) AS revenue
+
        FROM sales s
-       JOIN sale_items si
+
+       INNER JOIN sale_items si
          ON si.sale_id = s.sale_id
         AND si.business_id = s.business_id
+
        WHERE s.business_id = $1
          AND s.status = 'COMPLETED'
          AND s.sale_date >= $2
          AND s.sale_date < $3
+
        GROUP BY 1
      ),
 
@@ -153,37 +259,47 @@ async function getComparisonSeries(businessId, range, group) {
        SELECT
          date_trunc(
            $4,
-           (
-             s.sale_date AT TIME ZONE 'UTC'
-             + ($2::timestamptz - $6::timestamptz)
-           ) AT TIME ZONE 'UTC'
+           s.sale_date AT TIME ZONE 'Asia/Kolkata'
          ) AS bucket,
          SUM(si.revenue) AS revenue
+
        FROM sales s
-       JOIN sale_items si
+
+       INNER JOIN sale_items si
          ON si.sale_id = s.sale_id
         AND si.business_id = s.business_id
+
        WHERE s.business_id = $1
          AND s.status = 'COMPLETED'
          AND s.sale_date >= $6
          AND s.sale_date < $2
+
        GROUP BY 1
      )
 
      SELECT
-       c.bucket AT TIME ZONE 'UTC' AS bucket,
-       COALESCE(ct.revenue, 0)::numeric(14,2)
-         AS current_revenue,
-       COALESCE(pt.revenue, 0)::numeric(14,2)
-         AS previous_revenue
+       TO_CHAR(c.bucket, 'YYYY-MM-DD') AS bucket_date,
+
+       COALESCE(
+         ct.revenue,
+         0
+       )::numeric(14,2) AS current_revenue,
+
+       COALESCE(
+         pt.revenue,
+         0
+       )::numeric(14,2) AS previous_revenue
 
      FROM current_calendar c
 
      LEFT JOIN current_totals ct
        ON ct.bucket = c.bucket
 
+     LEFT JOIN previous_calendar pc
+       ON pc.bucket_no = c.bucket_no
+
      LEFT JOIN previous_totals pt
-       ON pt.bucket = c.bucket
+       ON pt.bucket = pc.bucket
 
      ORDER BY c.bucket`,
     [
@@ -196,34 +312,11 @@ async function getComparisonSeries(businessId, range, group) {
     ]
   );
 
-  return rows.map((row) => {
-    const date = new Date(row.bucket);
-
-    const period =
-      group === "monthly"
-        ? date.toLocaleDateString("en-IN", {
-            month: "short",
-            year: "numeric",
-            timeZone: "UTC",
-          })
-        : group === "weekly"
-          ? `Week of ${date.toLocaleDateString("en-IN", {
-              day: "numeric",
-              month: "short",
-              timeZone: "UTC",
-            })}`
-          : date.toLocaleDateString("en-IN", {
-              day: "numeric",
-              month: "short",
-              timeZone: "UTC",
-            });
-
-    return {
-      period,
-      currentRevenue: Number(row.current_revenue),
-      previousRevenue: Number(row.previous_revenue),
-    };
-  });
+  return rows.map((row) => ({
+    period: formatPeriodLabel(row.bucket_date, group),
+    currentRevenue: Number(row.current_revenue),
+    previousRevenue: Number(row.previous_revenue),
+  }));
 }
 
 // --------------------------------------------------
@@ -233,35 +326,6 @@ async function getComparisonSeries(businessId, range, group) {
 export async function getCategorySales(businessId, filters = {}) {
   const range = getDateRange(filters);
 
-  console.log("[Analytics] Category sales request:", {
-    businessId,
-    period: filters.period || "last30",
-    start: iso(range.start),
-    endExclusive: iso(range.endExclusive),
-  });
-
-  // Temporary diagnostic: identify the database and matching sales.
-  const diagnostic = await pool.query(
-    `SELECT
-       current_database() AS database_name,
-       current_user AS database_user,
-       COUNT(*) AS completed_sales,
-       COUNT(*) FILTER (
-         WHERE sale_date >= $2
-           AND sale_date < $3
-       ) AS sales_in_selected_period
-     FROM sales
-     WHERE business_id = $1
-       AND status = 'COMPLETED'`,
-    [
-      businessId,
-      iso(range.start),
-      iso(range.endExclusive),
-    ]
-  );
-
-  console.log("[Analytics] Database diagnostic:", diagnostic.rows[0]);
-
   const { rows } = await pool.query(
     `SELECT
        COALESCE(
@@ -269,11 +333,15 @@ export async function getCategorySales(businessId, filters = {}) {
          'Uncategorized'
        ) AS category,
 
-       COALESCE(SUM(si.revenue), 0)::numeric(14,2)
-         AS revenue,
+       COALESCE(
+         SUM(si.revenue),
+         0
+       )::numeric(14,2) AS revenue,
 
-       COALESCE(SUM(si.quantity), 0)::numeric(14,3)
-         AS units_sold,
+       COALESCE(
+         SUM(si.quantity),
+         0
+       )::numeric(14,3) AS units_sold,
 
        CASE
          WHEN SUM(SUM(si.revenue)) OVER () = 0 THEN 0
@@ -310,16 +378,13 @@ export async function getCategorySales(businessId, filters = {}) {
          'Uncategorized'
        )
 
-     ORDER BY
-       SUM(si.revenue) DESC`,
+     ORDER BY SUM(si.revenue) DESC`,
     [
       businessId,
       iso(range.start),
       iso(range.endExclusive),
     ]
   );
-
-  console.log("[Analytics] Category rows returned:", rows.length);
 
   return {
     period: filters.period || "last30",
@@ -342,7 +407,11 @@ export async function getSalesTrend(businessId, filters = {}) {
   const result = {};
 
   for (const group of Object.keys(GROUPINGS)) {
-    const rows = await getComparisonSeries(businessId, range, group);
+    const rows = await getComparisonSeries(
+      businessId,
+      range,
+      group
+    );
 
     result[group] = rows.map((row) => ({
       period: row.period,
@@ -371,6 +440,7 @@ export async function getTopProducts(businessId, filters = {}) {
        si.product_id,
        si.product_name_snapshot AS product_name,
        si.category_snapshot AS category,
+
        SUM(si.quantity)::numeric(14,3) AS units_sold,
        SUM(si.revenue)::numeric(14,2) AS revenue
 
@@ -423,7 +493,11 @@ export async function getRevenueAnalysis(businessId, filters = {}) {
   const result = {};
 
   for (const group of Object.keys(GROUPINGS)) {
-    const rows = await getComparisonSeries(businessId, range, group);
+    const rows = await getComparisonSeries(
+      businessId,
+      range,
+      group
+    );
 
     result[group] = rows.map((row) => ({
       period: row.period,
