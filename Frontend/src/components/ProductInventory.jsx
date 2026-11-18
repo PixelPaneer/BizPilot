@@ -23,6 +23,8 @@ const tabLabels = {
 
 function ProductInventory({
   products,
+  isLoading = false,
+  loadError = '',
   requestedProductId,
   onRequestHandled,
   onAddProduct,
@@ -46,12 +48,20 @@ function ProductInventory({
   // The page behind a pop-up should not scroll.
   useLockBodyScroll(modal !== 'none')
 
-  // When a product is picked in the top search bar, open its pop-up.
+  // When a product is picked in the top search bar, open its pop-up. The state is updated
+  // while rendering (React's recommended way to react to a changed prop), and the parent is
+  // told in an effect so it can clear the request.
+  const [seenRequestId, setSeenRequestId] = useState(null)
+  if (requestedProductId !== seenRequestId) {
+    setSeenRequestId(requestedProductId)
+    if (requestedProductId) {
+      setSelectedProductId(requestedProductId)
+      setModal('actions')
+    }
+  }
+
   useEffect(() => {
-    if (!requestedProductId) return
-    setSelectedProductId(requestedProductId)
-    setModal('actions')
-    if (onRequestHandled) onRequestHandled()
+    if (requestedProductId && onRequestHandled) onRequestHandled()
   }, [requestedProductId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const selectedProduct = products.find((product) => product.id === selectedProductId)
@@ -82,10 +92,13 @@ function ProductInventory({
     currentPage * PAGE_SIZE,
   )
 
-  const emptyMessage =
-    products.length === 0
-      ? 'Your inventory is empty. Click "Add Product" to add your first product.'
-      : 'No products match your current tab, search or filters.'
+  const emptyMessage = isLoading
+    ? 'Loading your products...'
+    : loadError
+      ? `Could not load your products: ${loadError}`
+      : products.length === 0
+        ? 'Your inventory is empty. Click "Add Product" to add your first product.'
+        : 'No products match your current tab, search or filters.'
 
   function handlePageChange(page) {
     setPageState({ key: filterKey, page })
@@ -106,23 +119,25 @@ function ProductInventory({
     setSortOrder('none')
   }
 
-  function handleSaveNew(productData) {
-    onAddProduct(productData)
+  // Each handler waits for the server. If the server rejects the change, the error is thrown
+  // back into the pop-up (which shows it) and the pop-up stays open.
+  async function handleSaveNew(productData) {
+    await onAddProduct(productData)
     closeModal()
   }
 
-  function handleSaveEdit(productData) {
-    onUpdateProduct(selectedProductId, productData)
+  async function handleSaveEdit(productData) {
+    await onUpdateProduct(selectedProductId, productData)
     closeModal()
   }
 
-  function handleConfirmAdjust(adjustment) {
-    onAdjustStock(selectedProductId, adjustment)
+  async function handleConfirmAdjust(adjustment) {
+    await onAdjustStock(selectedProductId, adjustment)
     closeModal()
   }
 
-  function handleConfirmDelete() {
-    onDeleteProduct(selectedProductId)
+  async function handleConfirmDelete() {
+    await onDeleteProduct(selectedProductId)
     closeModal()
   }
 

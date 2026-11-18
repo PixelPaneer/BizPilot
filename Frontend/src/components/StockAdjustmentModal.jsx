@@ -10,6 +10,8 @@ function StockAdjustmentModal({ product, onConfirm, onClose }) {
   const [type, setType] = useState('add') // 'add' or 'remove'
   const [amountText, setAmountText] = useState('')
   const [showError, setShowError] = useState(false)
+  const [submitError, setSubmitError] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     function handleKeyDown(event) {
@@ -44,20 +46,36 @@ function StockAdjustmentModal({ product, onConfirm, onClose }) {
     ? getStockStatus({ quantity: newQuantity, lowStockThreshold: product.lowStockThreshold })
     : null
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
+    if (isSaving) return
 
     if (!isValid) {
       setShowError(true)
       return // do not save an invalid adjustment
     }
 
-    onConfirm({ newQuantity, type, amount })
+    setIsSaving(true)
+    setSubmitError('')
+    try {
+      // The parent closes this pop-up once the server has saved the change.
+      await onConfirm({ newQuantity, type, amount })
+    } catch (error) {
+      if (error?.code === 'INSUFFICIENT_STOCK' && error.errors?.[0]) {
+        setSubmitError(
+          `Only ${error.errors[0].available} ${product.unit} in stock. The quantity may have changed; close this and try again.`,
+        )
+      } else {
+        setSubmitError(error?.message || 'Something went wrong. Please try again.')
+      }
+      setIsSaving(false)
+    }
   }
 
   function chooseType(nextType) {
     setType(nextType)
     setShowError(false)
+    setSubmitError('')
   }
 
   const toggleBase =
@@ -147,6 +165,7 @@ function StockAdjustmentModal({ product, onConfirm, onClose }) {
               onChange={(event) => {
                 setAmountText(event.target.value)
                 setShowError(false)
+                setSubmitError('')
               }}
               placeholder="e.g. 20"
               aria-invalid={showError && !isValid}
@@ -156,6 +175,11 @@ function StockAdjustmentModal({ product, onConfirm, onClose }) {
             {showError && !isValid && (
               <p id="adjust-error" className="mt-1 text-xs text-danger-text">
                 {error}
+              </p>
+            )}
+            {submitError && (
+              <p role="alert" className="mt-1 text-xs text-danger-text">
+                {submitError}
               </p>
             )}
           </div>
@@ -181,9 +205,10 @@ function StockAdjustmentModal({ product, onConfirm, onClose }) {
             </button>
             <button
               type="submit"
-              className="rounded-full bg-forest px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-deep"
+              disabled={isSaving}
+              className="rounded-full bg-forest px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-deep disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Confirm Adjustment
+              {isSaving ? 'Saving...' : 'Confirm Adjustment'}
             </button>
           </div>
         </form>

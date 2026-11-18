@@ -1,7 +1,23 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { TriangleAlert } from 'lucide-react'
 
 function DeleteConfirmationModal({ product, onConfirm, onCancel }) {
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
+
+  async function handleConfirm() {
+    if (isDeleting) return
+    setIsDeleting(true)
+    setErrorMessage('')
+    try {
+      // The parent closes this pop-up once the server has deleted the product.
+      await onConfirm()
+    } catch (error) {
+      setErrorMessage(error?.message || 'Something went wrong. Please try again.')
+      setIsDeleting(false)
+    }
+  }
+
   useEffect(() => {
     function handleKeyDown(event) {
       if (event.key === 'Escape') onCancel()
@@ -36,6 +52,12 @@ function DeleteConfirmationModal({ product, onConfirm, onCancel }) {
           This cannot be undone.
         </p>
 
+        {errorMessage && (
+          <p role="alert" className="mt-3 text-sm text-danger-text">
+            {errorMessage}
+          </p>
+        )}
+
         <div className="mt-6 flex justify-end gap-2">
           <button
             type="button"
@@ -46,10 +68,11 @@ function DeleteConfirmationModal({ product, onConfirm, onCancel }) {
           </button>
           <button
             type="button"
-            onClick={onConfirm}
-            className="rounded-full bg-danger-text px-5 py-2 text-sm font-medium text-white transition-colors hover:opacity-90"
+            onClick={handleConfirm}
+            disabled={isDeleting}
+            className="rounded-full bg-danger-text px-5 py-2 text-sm font-medium text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Delete
+            {isDeleting ? 'Deleting...' : 'Delete'}
           </button>
         </div>
       </div>

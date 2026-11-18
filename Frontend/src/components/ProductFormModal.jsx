@@ -45,6 +45,29 @@ function resolveCategory(form, categories) {
   return existing ?? typed
 }
 
+// Turns a failed API call into messages for the form fields.
+function apiErrorToFormErrors(error) {
+  if (error?.code === 'DUPLICATE_PRODUCT') {
+    return { name: 'A product with this name already exists.' }
+  }
+  if (error?.code === 'VALIDATION_ERROR' && Array.isArray(error.errors) && error.errors.length > 0) {
+    const messages = {
+      name: 'Enter a valid product name.',
+      category: 'Please choose a category.',
+      unit: 'Please choose a unit.',
+      price: 'Enter a valid price (0 or more, up to 2 decimals).',
+      quantity: 'Enter a valid quantity (0 or more, up to 3 decimals).',
+      lowStockThreshold: 'Enter a valid threshold (0 or more, up to 3 decimals).',
+    }
+    const found = {}
+    error.errors.forEach(({ field }) => {
+      if (messages[field]) found[field] = messages[field]
+    })
+    if (Object.keys(found).length > 0) return found
+  }
+  return { form: error?.message || 'Something went wrong. Please try again.' }
+}
+
 // Returns an object of error messages. Empty object = everything is valid.
 function validate(form) {
   const errors = {}
@@ -101,6 +124,7 @@ function ProductFormModal({ product, categories = [], onSave, onClose }) {
   const isEditing = Boolean(product)
   const [form, setForm] = useState(isEditing ? productToForm(product) : emptyForm)
   const [errors, setErrors] = useState({})
+  const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     function handleKeyDown(event) {
@@ -116,8 +140,9 @@ function ProductFormModal({ product, categories = [], onSave, onClose }) {
     setErrors({ ...errors, [name]: undefined })
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
+    if (isSaving) return
 
     const foundErrors = validate(form)
     if (Object.keys(foundErrors).length > 0) {
@@ -125,14 +150,21 @@ function ProductFormModal({ product, categories = [], onSave, onClose }) {
       return
     }
 
-    onSave({
-      name: form.name.trim(),
-      category: resolveCategory(form, categories),
-      price: Number(form.price),
-      unit: form.unit,
-      quantity: Number(form.quantity),
-      lowStockThreshold: Number(form.lowStockThreshold),
-    })
+    setIsSaving(true)
+    try {
+      // The parent closes this pop-up once the server has saved the product.
+      await onSave({
+        name: form.name.trim(),
+        category: resolveCategory(form, categories),
+        price: Number(form.price),
+        unit: form.unit,
+        quantity: Number(form.quantity),
+        lowStockThreshold: Number(form.lowStockThreshold),
+      })
+    } catch (error) {
+      setErrors(apiErrorToFormErrors(error))
+      setIsSaving(false)
+    }
   }
 
   const title = isEditing ? 'Edit Product' : 'Add Product'
@@ -291,6 +323,12 @@ function ProductFormModal({ product, categories = [], onSave, onClose }) {
             />
           </Field>
 
+          {errors.form && (
+            <p role="alert" className="text-sm text-danger-text sm:col-span-2">
+              {errors.form}
+            </p>
+          )}
+
           <div className="mt-2 flex justify-end gap-2 sm:col-span-2">
             <button
               type="button"
@@ -301,9 +339,10 @@ function ProductFormModal({ product, categories = [], onSave, onClose }) {
             </button>
             <button
               type="submit"
-              className="rounded-full bg-forest px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-deep"
+              disabled={isSaving}
+              className="rounded-full bg-forest px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-deep disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isEditing ? 'Save Changes' : 'Add Product'}
+              {isSaving ? 'Saving...' : isEditing ? 'Save Changes' : 'Add Product'}
             </button>
           </div>
         </form>
