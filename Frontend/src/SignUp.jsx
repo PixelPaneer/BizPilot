@@ -3,7 +3,21 @@ import AuthLayout from "./AuthLayout.jsx";
 import Field from "./Field.jsx";
 import { User, Mail, Lock, Eye, EyeOff, Chat as WhatsApp, Arrow } from "./icons.jsx";
 
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/$/, "");
 const isValidMobileNumber = (number) => /^[6-9]\d{9}$/.test(number);
+
+async function authRequest(endpoint, body) {
+  const response = await fetch(`${API_BASE_URL}/auth${endpoint}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || result.success === false) {
+    throw new Error(result.message || "Something went wrong. Please try again.");
+  }
+  return result;
+}
 
 export default function SignUp({ onSignIn }) {
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", whatsapp: "", password: "" });
@@ -11,6 +25,14 @@ export default function SignUp({ onSignIn }) {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [verificationNotice, setVerificationNotice] = useState("");
+  const [otp, setOtp] = useState("");
+  const [otpDialogOpen, setOtpDialogOpen] = useState(false);
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const [verifiedNumber, setVerifiedNumber] = useState("");
+
+  const fullWhatsappNumber = `+91${form.whatsapp}`;
+  const isWhatsappVerified = verifiedNumber === fullWhatsappNumber;
 
   const set = (key) => (e) => {
     const value = key === "whatsapp" ? e.target.value.replace(/\D/g, "").slice(0, 10) : e.target.value;
@@ -21,7 +43,62 @@ export default function SignUp({ onSignIn }) {
       delete next[key];
       return next;
     });
-    if (key === "whatsapp") setVerificationNotice("");
+    if (key === "whatsapp") {
+      setVerificationNotice("");
+      setOtp("");
+      setOtpDialogOpen(false);
+      setVerifiedNumber("");
+    }
+  };
+
+  const handleSendOtp = async () => {
+    if (!isValidMobileNumber(form.whatsapp)) {
+      setErrors((current) => ({ ...current, whatsapp: "Enter a valid 10-digit mobile number." }));
+      setVerificationNotice("");
+      return;
+    }
+
+    setSendingOtp(true);
+    setVerificationNotice("");
+    try {
+      await authRequest("/whatsapp/send-otp", { whatsappNumber: fullWhatsappNumber });
+      setOtp("");
+      setOtpDialogOpen(true);
+      setVerificationNotice(`OTP sent to WhatsApp number ${fullWhatsappNumber}.`);
+    } catch (error) {
+      setVerificationNotice(error.message);
+      setOtpDialogOpen(false);
+    } finally {
+      setSendingOtp(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!/^\d{6}$/.test(otp)) {
+      setVerificationNotice("Enter the 6-digit OTP received on WhatsApp.");
+      return;
+    }
+
+    setVerifyingOtp(true);
+    setVerificationNotice("");
+    try {
+      await authRequest("/whatsapp/verify-otp", {
+        whatsappNumber: fullWhatsappNumber,
+        otp,
+      });
+      setVerifiedNumber(fullWhatsappNumber);
+      setOtpDialogOpen(false);
+      setVerificationNotice("WhatsApp number verified successfully.");
+      setErrors((current) => {
+        const next = { ...current };
+        delete next.whatsapp;
+        return next;
+      });
+    } catch (error) {
+      setVerificationNotice(error.message);
+    } finally {
+      setVerifyingOtp(false);
+    }
   };
 
   const validate = () => {
@@ -32,6 +109,7 @@ export default function SignUp({ onSignIn }) {
     else if (!/^\S+@\S+\.\S+$/.test(form.email)) e.email = "Enter a valid email address.";
     if (!form.whatsapp) e.whatsapp = "Enter your WhatsApp number.";
     else if (!isValidMobileNumber(form.whatsapp)) e.whatsapp = "Enter a valid 10-digit mobile number.";
+    else if (!isWhatsappVerified) e.whatsapp = "Verify your WhatsApp number before creating an account.";
     if (!form.password) e.password = "Create a password.";
     else if (form.password.length < 8) e.password = "Use at least 8 characters.";
     return e;
@@ -42,11 +120,24 @@ export default function SignUp({ onSignIn }) {
     const e = validate();
     setErrors(e);
     if (Object.keys(e).length) return;
+
     setLoading(true);
-    // TODO: replace with your API call, e.g. await api.post("/auth/register", { ...form, whatsapp: "+91" + form.whatsapp })
-    await new Promise((r) => setTimeout(r, 900));
-    setLoading(false);
-    console.log("Account created:", { ...form, password: undefined });
+    setVerificationNotice("");
+    try {
+      await authRequest("/register", {
+        firstName: form.firstName.trim(),
+        lastName: form.lastName.trim(),
+        email: form.email.trim(),
+        whatsappNumber: fullWhatsappNumber,
+        password: form.password,
+      });
+      setVerificationNotice("Account created successfully. Please sign in.");
+      onSignIn();
+    } catch (error) {
+      setVerificationNotice(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -72,32 +163,74 @@ export default function SignUp({ onSignIn }) {
         />
 
         <Field
-          className="mb-2" id="whatsapp" label="WhatsApp number" icon={WhatsApp} prefix="+91"
+          className="mb-1" id="whatsapp" label="WhatsApp number" icon={WhatsApp} prefix="+91"
           type="tel" inputMode="numeric" autoComplete="tel-national" required
           placeholder="Enter your WhatsApp number" value={form.whatsapp} onChange={set("whatsapp")} error={errors.whatsapp}
           trailing={
             <button
               type="button"
-              disabled={!form.whatsapp}
-              onClick={() => {
-                if (!isValidMobileNumber(form.whatsapp)) {
-                  setErrors((current) => ({
-                    ...current,
-                    whatsapp: "Enter a valid 10-digit mobile number.",
-                  }));
-                  setVerificationNotice("");
-                  return;
-                }
-                setVerificationNotice("Number verification will be available once the verification service is connected.");
-              }}
+              disabled={!form.whatsapp || sendingOtp || isWhatsappVerified}
+              onClick={handleSendOtp}
               className="whitespace-nowrap rounded-lg px-2 py-1 text-sm font-semibold text-brand-700 hover:bg-mint-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Verify
+              {isWhatsappVerified ? "Verified ✓" : sendingOtp ? "Sending…" : "Verify"}
             </button>
           }
         />
+
+        {otpDialogOpen && (
+          <div
+            role="dialog"
+            aria-label="WhatsApp OTP verification"
+            className="mb-3 rounded-xl border border-line bg-[#fbfcfa] p-3 shadow-sm"
+          >
+            <div className="mb-2 flex items-start justify-between gap-2">
+              <div>
+                <p className="text-sm font-semibold text-brand-900">Verify your WhatsApp number</p>
+                <p className="mt-0.5 text-xs text-muted">Enter the 6-digit code sent to {fullWhatsappNumber}.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOtpDialogOpen(false)}
+                aria-label="Close OTP dialog"
+                className="rounded-md px-2 text-lg leading-none text-muted hover:bg-mint-50"
+              >
+                ×
+              </button>
+            </div>
+            <div className="flex gap-2">
+              <input
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                placeholder="Enter OTP"
+                aria-label="6-digit WhatsApp OTP"
+                className="h-10 min-w-0 flex-1 rounded-lg border border-line bg-white px-3 text-sm text-ink outline-none focus:border-brand-500 focus:ring-2 focus:ring-mint-100"
+              />
+              <button
+                type="button"
+                onClick={handleVerifyOtp}
+                disabled={verifyingOtp || otp.length !== 6}
+                className="rounded-lg bg-brand-700 px-4 text-sm font-semibold text-white hover:bg-brand-900 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {verifyingOtp ? "Checking…" : "Confirm"}
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={handleSendOtp}
+              disabled={sendingOtp}
+              className="mt-2 text-xs font-semibold text-brand-700 hover:underline disabled:opacity-50"
+            >
+              {sendingOtp ? "Sending…" : "Resend OTP"}
+            </button>
+          </div>
+        )}
+
         {verificationNotice && (
-          <p role="status" className="-mt-1 mb-2 text-xs text-muted">
+          <p role="status" className="mb-2 text-xs text-muted">
             {verificationNotice}
           </p>
         )}
@@ -119,8 +252,8 @@ export default function SignUp({ onSignIn }) {
         />
 
         <button
-          type="submit" disabled={loading}
-          className="flex h-11 w-full cursor-pointer items-center justify-center gap-2.5 rounded-xl bg-brand-700 text-base font-semibold text-white transition hover:bg-brand-900 active:translate-y-px disabled:cursor-progress disabled:opacity-70"
+          type="submit" disabled={loading || !isWhatsappVerified}
+          className="flex h-11 w-full cursor-pointer items-center justify-center gap-2.5 rounded-xl bg-brand-700 text-base font-semibold text-white transition hover:bg-brand-900 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading ? "Creating account…" : (<>Create account <Arrow /></>)}
         </button>

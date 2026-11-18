@@ -14,6 +14,8 @@ import {
   Chat,
 } from "./icons.jsx";
 
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/$/, "");
+
 const features = [
   {
     icon: Box,
@@ -48,12 +50,17 @@ export default function SignIn() {
   const [signIn, setSignIn] = useState(true); // true: sign in, false: sign up
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [loginNotice, setLoginNotice] = useState("");
+
+  const isPhoneNumber = (value) => /^[6-9]\d{9}$/.test(value.replace(/^\+91/, "").replace(/\D/g, ""));
+  const isEmail = (value) => /^\S+@\S+\.\S+$/.test(value);
 
   const validate = () => {
     const e = {};
-    if (!email.trim()) e.email = "Enter your email address.";
-    else if (!/^\S+@\S+\.\S+$/.test(email))
-      e.email = "Enter a valid email address.";
+    const identifier = email.trim();
+    if (!identifier) e.email = "Enter your email address or WhatsApp number.";
+    else if (!isEmail(identifier) && !isPhoneNumber(identifier))
+      e.email = "Enter a valid email address or 10-digit WhatsApp number.";
     if (!password) e.password = "Enter your password.";
     return e;
   };
@@ -62,12 +69,38 @@ export default function SignIn() {
     ev.preventDefault();
     const e = validate();
     setErrors(e);
+    setLoginNotice("");
     if (Object.keys(e).length) return;
+
     setLoading(true);
-    // TODO: replace with your API call, e.g. await api.post("/auth/login", { email, password })
-    await new Promise((r) => setTimeout(r, 900));
-    setLoading(false);
-    console.log("Signed in:", { email });
+    const identifier = email.trim();
+    const loginPayload = isEmail(identifier)
+      ? { email: identifier.toLowerCase(), password }
+      : { whatsappNumber: identifier.startsWith("+91") ? identifier : `+91${identifier.replace(/\D/g, "")}`, password };
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(loginPayload),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || result.success === false) {
+        throw new Error(result.message || "Unable to sign in. Please check your details.");
+      }
+
+      if (result.data?.accessToken) {
+        localStorage.setItem("bizpilot_access_token", result.data.accessToken);
+      }
+      if (result.data?.user) {
+        localStorage.setItem("bizpilot_user", JSON.stringify(result.data.user));
+      }
+      setLoginNotice("Signed in successfully.");
+    } catch (error) {
+      setLoginNotice(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -141,7 +174,7 @@ export default function SignIn() {
                 htmlFor="email"
                 className="mb-2 block text-sm font-semibold"
               >
-                Email
+                Email or WhatsApp number
               </label>
               <div
                 className={`${inputWrap} ${errors.email ? "border-danger-700" : "border-line"}`}
@@ -149,11 +182,15 @@ export default function SignIn() {
                 <Mail />
                 <input
                   id="email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="Enter your email address"
+                  type="text"
+                  autoComplete="username"
+                  placeholder="Enter email or +91 mobile number"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setErrors((current) => ({ ...current, email: "" }));
+                    setLoginNotice("");
+                  }}
                   aria-invalid={!!errors.email}
                   className="min-w-0 flex-1 bg-transparent text-[15px] text-ink outline-none placeholder:text-[#9aa59e]"
                 />
@@ -182,7 +219,11 @@ export default function SignIn() {
                   autoComplete="current-password"
                   placeholder="Enter your password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setErrors((current) => ({ ...current, password: "" }));
+                    setLoginNotice("");
+                  }}
                   aria-invalid={!!errors.password}
                   className="min-w-0 flex-1 bg-transparent text-[15px] text-ink outline-none placeholder:text-[#9aa59e]"
                 />
@@ -208,6 +249,12 @@ export default function SignIn() {
             >
               Forgot password?
             </a>
+
+            {loginNotice && (
+              <p role="status" className="mb-3 text-sm text-muted">
+                {loginNotice}
+              </p>
+            )}
 
             <button
               type="submit"
