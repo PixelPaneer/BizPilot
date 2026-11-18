@@ -9,12 +9,13 @@ export async function insertStockMovement(client, {
   movementType,
   source,
   userId,
+  referenceId,
 }) {
   const { rows } = await client.query(
     `INSERT INTO stock_movements
        (business_id, product_id, movement_type, quantity_change,
         previous_quantity, new_quantity, source, user_id, reference_id)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULL)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
      RETURNING movement_id`,
     [
       businessId,
@@ -25,9 +26,32 @@ export async function insertStockMovement(client, {
       next,
       source,
       userId ?? null,
+      referenceId ?? null,
     ]
   );
   return rows[0].movement_id;
+}
+
+// How much stock a sale took out of each product (one row per product). Used when voiding.
+export async function listSaleDeductions(client, businessId, saleId) {
+  const { rows } = await client.query(
+    `SELECT m.product_id, p.product_name, p.is_active,
+            SUM(-m.quantity_change) AS deducted
+       FROM stock_movements m
+       JOIN products p
+         ON p.business_id = m.business_id AND p.product_id = m.product_id
+      WHERE m.business_id = $1 AND m.reference_id = $2
+        AND m.movement_type = 'SALE'
+      GROUP BY m.product_id, p.product_name, p.is_active
+      ORDER BY m.product_id`,
+    [businessId, saleId]
+  );
+  return rows.map((row) => ({
+    productId: row.product_id,
+    productName: row.product_name,
+    isActive: row.is_active,
+    deducted: Number(row.deducted),
+  }));
 }
 
 export async function listStockHistory(

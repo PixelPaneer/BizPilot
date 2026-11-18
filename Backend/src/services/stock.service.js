@@ -9,7 +9,7 @@ function formatQuantity(quantity) {
 
 export async function applyStockChange(
   client,
-  { businessId, productId, delta, movementType, source, userId, skipAudit }
+  { businessId, productId, delta, movementType, source, userId, referenceId, skipAudit }
 ) {
   const { rows } = await client.query(
     `SELECT i.available_quantity, p.product_name
@@ -64,6 +64,7 @@ export async function applyStockChange(
     movementType,
     source,
     userId,
+    referenceId,
   });
   await client.query(
     `UPDATE inventory

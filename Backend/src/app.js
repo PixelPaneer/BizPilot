@@ -6,6 +6,10 @@ import analyticsRoutes from "./routes/analytics.routes.js";
 import cookieParser from "cookie-parser";
 import productRoutes from "./routes/product.routes.js";
 import inventoryRoutes from "./routes/inventory.routes.js";
+import saleRoutes from "./routes/sale.routes.js";
+import purchaseRoutes from "./routes/purchase.routes.js";
+import dashboardRoutes from "./routes/dashboard.routes.js";
+import profileRoutes from "./routes/profile.routes.js";
 import { authenticate } from "./middleware/auth.middleware.js";
 import { requireBusinessContext } from "./middleware/requireBusinessContext.js";
 
@@ -42,6 +46,30 @@ app.use(
   authenticate,
   requireBusinessContext,
   inventoryRoutes
+);
+app.use(
+  "/api/v1/sales",
+  authenticate,
+  requireBusinessContext,
+  saleRoutes
+);
+app.use(
+  "/api/v1/purchases",
+  authenticate,
+  requireBusinessContext,
+  purchaseRoutes
+);
+app.use(
+  "/api/v1/dashboard",
+  authenticate,
+  requireBusinessContext,
+  dashboardRoutes
+);
+app.use(
+  "/api/v1/profile",
+  authenticate,
+  requireBusinessContext,
+  profileRoutes
 );
 
 app.use((req, res) => {
