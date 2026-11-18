@@ -33,14 +33,16 @@ function ProfileMenu({ onSignOut }) {
         aria-label="Open profile menu"
         aria-expanded={isOpen}
         onClick={() => setIsOpen((open) => !open)}
-        className="flex items-center gap-2.5 rounded-2xl border border-line bg-white p-1 transition-colors hover:bg-sage-light md:py-1.5 md:pl-1.5 md:pr-3"
+        className="flex shrink-0 items-center gap-2 whitespace-nowrap rounded-xl border border-line bg-white p-1 transition-colors hover:bg-sage-light md:py-1 md:pl-1 md:pr-2.5 xl:gap-2.5 xl:rounded-2xl xl:py-1.5 xl:pl-1.5 xl:pr-3"
       >
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-forest text-xs font-semibold text-white">
+        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-forest text-xs font-semibold text-white xl:h-9 xl:w-9">
           {initials}
         </span>
-        <span className="hidden text-left md:block">
-          <span className="block text-sm font-semibold leading-tight text-ink">{name || '...'}</span>
-          <span className="block text-xs leading-tight text-muted">{ROLE_LABEL}</span>
+        <span className="hidden max-w-36 text-left md:block">
+          <span className="block truncate text-[0.8rem] font-semibold leading-tight text-ink xl:text-sm">
+            {name || '...'}
+          </span>
+          <span className="hidden text-xs leading-tight text-muted xl:block">{ROLE_LABEL}</span>
         </span>
         <ChevronDown size={16} aria-hidden="true" className="hidden text-muted md:block" />
       </button>

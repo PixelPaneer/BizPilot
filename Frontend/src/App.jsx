@@ -9,6 +9,7 @@ import Header from './components/Header'
 import InventorySummary from './components/InventorySummary'
 import LowStockAlertModal from './components/LowStockAlertModal'
 import NotFoundPage from './components/NotFoundPage'
+import PeriodSelect from './components/PeriodSelect'
 import ProductInventory from './components/ProductInventory'
 import UpdateStockPage from './components/stock/UpdateStockPage'
 import Sidebar from './components/Sidebar'
@@ -147,26 +148,35 @@ function App() {
   }
 
   // The header only has room for the heading on wide screens; below that it appears here.
-  function renderSmallScreenHeading(heading, spacing = '') {
+  // `action` (the dashboard's period selector) sits on the same row, at the right.
+  function renderSmallScreenHeading(heading, spacing = '', action = null) {
     return (
-      <div className={`${spacing} xl:hidden`}>
-        <h1 className="page-heading-title">{heading.title}</h1>
-        <p className="page-heading-subtitle">{heading.subtitle}</p>
+      <div className={`${spacing} flex items-start justify-between gap-4 xl:hidden`}>
+        <div className="min-w-0">
+          <h1 className="page-heading-title">{heading.title}</h1>
+          <p className="page-heading-subtitle">{heading.subtitle}</p>
+        </div>
+        {action && <div className="shrink-0">{action}</div>}
       </div>
     )
   }
 
   // Help and Settings draw their own (translated) title inside the page, so the extra small-screen
-  // heading is only added for pages that have none (the dashboard).
-  function renderDashboardPage(pageId, content, showSmallScreenHeading = false) {
+  // heading is only added for pages that have none (the dashboard). `fit` makes the page exactly
+  // one screen tall on large screens, so it does not scroll (see .app--fit in index.css).
+  function renderDashboardPage(
+    pageId,
+    content,
+    { showSmallScreenHeading = false, fit = false, headingAction = null } = {},
+  ) {
     const heading = getPageHeading(pageId, profile)
 
     return (
-      <div className="app">
+      <div className={fit ? 'app app--fit' : 'app'}>
         {renderChrome(heading, pageId)}
         <div className="main">
           <main className="content">
-            {showSmallScreenHeading && renderSmallScreenHeading(heading, 'mb-5')}
+            {showSmallScreenHeading && renderSmallScreenHeading(heading, 'mb-5', headingAction)}
             {content}
           </main>
         </div>
@@ -260,7 +270,11 @@ function App() {
     <Routes>
       <Route path="/signIn" element={<SignIn onSignIn={handleSignIn} />} />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="/dashboard" element={protectedPage(renderDashboardPage('dashboard', <Dashboard period={period} onPeriodChange={setPeriod} />, true))} />
+      <Route path="/dashboard" element={protectedPage(renderDashboardPage('dashboard', <Dashboard period={period} onPeriodChange={setPeriod} />, {
+        showSmallScreenHeading: true,
+        fit: true,
+        headingAction: <PeriodSelect value={period} onChange={setPeriod} />,
+      }))} />
       <Route path="/inventory" element={protectedPage(renderInventoryPage())} />
       <Route path="/inventory/update-stock" element={protectedPage(renderUpdateStockPage())} />
       <Route path="/analytics" element={protectedPage(renderSalesPage())} />

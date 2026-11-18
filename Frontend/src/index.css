@@ -143,6 +143,12 @@ html[data-theme="dark"] {
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; }
 html { scrollbar-gutter: stable; }
+
+/* Scrollbars follow the theme (light and dark) everywhere: slim, sage thumb, no track. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--green-500) 55%, transparent) transparent;
+}
 body {
   margin: 0;
   background: var(--page);
@@ -555,4 +561,44 @@ html[data-theme="dark"] .brand-logo-image { filter: brightness(1.35) saturate(0.
   textarea {
     font-size: 16px;
   }
+}
+
+/* ===== Dashboard that fits the screen =====
+   On screens big enough for all four cards the page is exactly one screen tall: the header keeps
+   its height, the content area fills the rest, and the two rows of cards share it in proportion
+   to what they hold. Spacing is a little tighter here so that all five activity entries fit on a
+   laptop-sized window. Smaller screens keep the normal scrolling layout. */
+@media (min-width: 1024px) and (min-height: 680px) {
+  .app--fit {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
+  }
+  .app--fit > header { flex-shrink: 0; }
+  .app--fit .main { flex: 1 1 0; min-height: 0; }
+  .app--fit .content {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 4px 28px 14px;
+  }
+  .app--fit .content > .mb-5 { margin-bottom: 8px; }
+
+  .app--fit .dashboard { flex: 1 1 0; min-height: 0; gap: 14px; }
+  .app--fit .dashboard > .mb-4 { margin-bottom: 0; flex-shrink: 0; }
+  .app--fit .period-btn { height: 36px; }
+  .app--fit .dashboard__row { gap: 14px; min-height: 0; }
+  .app--fit .dashboard__row--summary { flex: 1 1 auto; }
+  .app--fit .dashboard__row--detail { flex: 1.5 1 auto; }
+  .app--fit .dashboard__row > * { min-height: 0; }
+
+  .app--fit .card { padding: 16px 20px; overflow: hidden; }
+  .app--fit .card__head { margin-bottom: 10px; }
+  .app--fit .summary-card { padding: 14px 22px; }
+  .app--fit .quick { padding: 12px 14px; }
+  .app--fit .quick-grid { flex: 1; grid-auto-rows: 1fr; min-height: 0; gap: 12px; }
+  .app--fit .activity-list { flex: 1; min-height: 0; overflow: hidden; gap: 2px; }
+  .app--fit .activity { padding: 5px 0; }
 }

@@ -31,7 +31,8 @@ export default function Dashboard({ period, onPeriodChange }) {
   }, [period, attempt, requestKey])
 
   const toolbar = (
-    <div className="mb-4 flex justify-end">
+    // Below xl the selector sits beside the page heading (see App.jsx), so this one is hidden.
+    <div className="mb-4 hidden justify-end xl:flex">
       <PeriodSelect value={period} onChange={onPeriodChange} />
     </div>
   )
@@ -69,7 +70,7 @@ export default function Dashboard({ period, onPeriodChange }) {
     <div className="dashboard">
       {toolbar}
       {/* Row 1: Total Revenue | Inventory Overview */}
-      <div className="dashboard__row">
+      <div className="dashboard__row dashboard__row--summary">
         <SummaryCard
           icon={<IndianRupee size={26} strokeWidth={2.4} />}
           label="Total Revenue"
@@ -81,7 +82,7 @@ export default function Dashboard({ period, onPeriodChange }) {
       </div>
 
       {/* Row 2: Quick Actions | Recent Activity */}
-      <div className="dashboard__row">
+      <div className="dashboard__row dashboard__row--detail">
         <QuickActions />
         <RecentActivity activities={data.activities} />
       </div>
