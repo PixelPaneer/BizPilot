@@ -10,6 +10,7 @@ import saleRoutes from "./routes/sale.routes.js";
 import purchaseRoutes from "./routes/purchase.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
 import profileRoutes from "./routes/profile.routes.js";
+import settingsRoutes from "./routes/settings.routes.js";
 import { authenticate } from "./middleware/auth.middleware.js";
 import { requireBusinessContext } from "./middleware/requireBusinessContext.js";
 
@@ -70,6 +71,12 @@ app.use(
   authenticate,
   requireBusinessContext,
   profileRoutes
+);
+app.use(
+  "/api/v1/settings",
+  authenticate,
+  requireBusinessContext,
+  settingsRoutes
 );
 
 app.use((req, res) => {
