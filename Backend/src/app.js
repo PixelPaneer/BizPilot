@@ -11,19 +11,29 @@ import purchaseRoutes from "./routes/purchase.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
 import profileRoutes from "./routes/profile.routes.js";
 import settingsRoutes from "./routes/settings.routes.js";
+import authRoutes from "./routes/auth.routes.js";
 import { authenticate } from "./middleware/auth.middleware.js";
 import { requireBusinessContext } from "./middleware/requireBusinessContext.js";
 
 const app = express();
 
 app.use(helmet());
-app.use(cors({ origin: env.frontendOrigin }));
+app.use(
+  cors({
+    // FRONTEND_ORIGIN may list several origins, separated by commas.
+    origin: env.frontendOrigin.split(",").map((origin) => origin.trim()),
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(cookieParser())
 
 app.get("/health", (req, res) => {
   res.status(200).json({ success: true, message: "BizPilot API is running" });
 });
+
+// Sign-up, sign-in and "who am I" (rate-limited; no token needed for register and login).
+app.use("/api/v1/auth", authRoutes);
 
 // The analytics router applies requireBusinessContext itself, so it only needs authenticate here.
 app.use("/api/v1/analytics", authenticate, analyticsRoutes);
