@@ -20,8 +20,13 @@ export async function apiRequest(path, { method = 'GET', body } = {}) {
     response = await fetch(`${API_BASE}${path}`, {
       method,
       credentials: 'include',
-      headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
-      body: body === undefined ? undefined : JSON.stringify(body),
+      // FormData (file uploads) is sent as is, so the browser sets its own multipart header.
+      headers:
+        body === undefined || body instanceof FormData
+          ? undefined
+          : { 'Content-Type': 'application/json' },
+      body:
+        body === undefined || body instanceof FormData ? body : JSON.stringify(body),
     })
   } catch {
     throw new ApiRequestError('Unable to reach the server. Please check your connection.')

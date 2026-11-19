@@ -9,13 +9,15 @@ import {
 } from "lucide-react";
 
 import { applyTheme } from "../../utils/theme";
+import SettingsLoad from "./SettingsLoad";
+import { useLoad } from "../../utils/useLoad";
+import {
+  fetchSettings,
+  saveSettings,
+  toLanguagePreferences,
+  fromLanguagePreferences
+} from "../../utils/settingsApi";
 import "./LanguagePreferences.css";
-
-const defaultPreferences = {
-  language: "English",
-  theme: "Light",
-  dateFormat: "DD/MM/YYYY"
-};
 
 const translations = {
   English: {
@@ -70,23 +72,27 @@ const translations = {
   }
 };
 
-function LanguagePreferences({ language = "English", onLanguageChange }) {
+// The language and theme are also kept in the browser, because the page needs them at start-up
+// before any request has finished. The server's copy is the one that is saved and loaded.
+function rememberLocally(preferences) {
+  try {
+    localStorage.setItem(
+      "bizpilot-language-preferences",
+      JSON.stringify(preferences)
+    );
+  } catch (error) {
+    console.error("Unable to remember language and appearance preferences.", error);
+  }
+}
+
+async function loadLanguagePreferences() {
+  return toLanguagePreferences(await fetchSettings());
+}
+
+function LanguagePreferencesForm({ language = "English", onLanguageChange, initial }) {
   const t = translations[language] || translations.English;
 
-  const [preferences, setPreferences] = useState(() => {
-    try {
-      const saved = localStorage.getItem("bizpilot-language-preferences");
-      const parsed = saved ? JSON.parse(saved) : {};
-      return {
-        ...defaultPreferences,
-        ...parsed,
-        theme: parsed.theme === "Dark" ? "Dark" : "Light",
-      };
-    } catch (error) {
-      console.error("Unable to read language and appearance preferences from local storage.", error);
-      return defaultPreferences;
-    }
-  });
+  const [preferences, setPreferences] = useState(initial);
 
   const [savedPreferences, setSavedPreferences] = useState(preferences);
   const [message, setMessage] = useState("");
@@ -100,29 +106,30 @@ function LanguagePreferences({ language = "English", onLanguageChange }) {
     setMessage("");
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     try {
-      localStorage.setItem(
-        "bizpilot-language-preferences",
-        JSON.stringify(preferences)
+      const saved = toLanguagePreferences(
+        await saveSettings(fromLanguagePreferences(preferences))
       );
 
-      applyTheme(preferences.theme);
+      rememberLocally(saved);
+      applyTheme(saved.theme);
 
-      setSavedPreferences(preferences);
+      setPreferences(saved);
+      setSavedPreferences(saved);
 
       if (onLanguageChange) {
-        onLanguageChange(preferences.language);
+        onLanguageChange(saved.language);
       }
 
       const selectedTranslation =
-        translations[preferences.language] || translations.English;
+        translations[saved.language] || translations.English;
 
       setMessage(selectedTranslation.success);
 
     } catch (error) {
       console.error("Unable to save language and appearance preferences.", error);
-      setMessage(t.error);
+      setMessage(`${t.error} ${error.message}`);
     }
   };
 
@@ -293,6 +300,22 @@ function LanguagePreferences({ language = "English", onLanguageChange }) {
       </div>
 
     </div>
+  );
+}
+
+function LanguagePreferences({ language = "English", onLanguageChange }) {
+  const load = useLoad(loadLanguagePreferences);
+
+  return (
+    <SettingsLoad language={language} load={load}>
+      {(initial) => (
+        <LanguagePreferencesForm
+          language={language}
+          onLanguageChange={onLanguageChange}
+          initial={initial}
+        />
+      )}
+    </SettingsLoad>
   );
 }
 

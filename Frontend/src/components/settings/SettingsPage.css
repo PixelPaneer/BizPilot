@@ -186,3 +186,25 @@
 .settings-close-btn:hover {
   background: var(--light-sage);
 }
+/* Shown while a section's settings load from the server, or when loading fails */
+.settings-load-note {
+  padding: 32px 8px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.settings-retry-btn {
+  margin-top: 12px;
+  padding: 8px 20px;
+  border: none;
+  border-radius: 999px;
+  background: var(--green);
+  color: var(--cream);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.settings-retry-btn:hover {
+  background: var(--green-500);
+}

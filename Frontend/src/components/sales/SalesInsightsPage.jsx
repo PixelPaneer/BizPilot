@@ -1,17 +1,16 @@
-import { useMemo, useState } from 'react'
-import {
-  getCategorySales,
-  getRevenueComparison,
-  getSalesTrend,
-  getTopSellingProducts,
-} from '../../data/salesData'
-import { resolveDateRange } from '../../utils/salesUtils'
+import { useState } from 'react'
+import { useAnalytics } from '../../utils/analyticsApi'
 import './sales.css'
 import RevenueAnalysis from './RevenueAnalysis'
 import SalesByCategory from './SalesByCategory'
 import SalesInsightsHeader from './SalesInsightsHeader'
 import SalesTrend from './SalesTrend'
 import TopSellingProducts from './TopSellingProducts'
+
+// What each chart needs from its endpoint's response.
+const asIs = (data) => data
+const categoriesOf = (data) => data.categories
+const productsOf = (data) => data.products
 
 // Fades each section in one after another when the page opens.
 // className sets the layer order, so a section's dropdown opens above the card below it.
@@ -21,6 +20,34 @@ function Reveal({ delay = 0, className = '', children }) {
       {children}
     </div>
   )
+}
+
+// Shows a loading line or the error (with a retry button) until a section's data has arrived.
+function Loaded({ load, label, children }) {
+  if (load.isLoading) {
+    return (
+      <div className="sales-card rounded-2xl p-6 text-center text-sm" role="status">
+        Loading {label}…
+      </div>
+    )
+  }
+
+  if (load.error) {
+    return (
+      <div className="sales-card rounded-2xl p-6 text-center text-sm" role="alert">
+        <p>Could not load {label}: {load.error}</p>
+        <button
+          type="button"
+          onClick={load.retry}
+          className="mt-3 rounded-full bg-forest px-5 py-2 text-sm font-medium text-white hover:bg-deep"
+        >
+          Try again
+        </button>
+      </div>
+    )
+  }
+
+  return children(load.value)
 }
 
 export default function SalesInsightsPage() {
@@ -45,15 +72,10 @@ export default function SalesInsightsPage() {
   const categoryFilter = categoryOverride ?? dateRange
   const productFilter = productOverride ?? dateRange
 
-  const pageRange = useMemo(() => resolveDateRange(dateRange), [dateRange])
-  const categoryRange = useMemo(() => resolveDateRange(categoryFilter), [categoryFilter])
-  const productRange = useMemo(() => resolveDateRange(productFilter), [productFilter])
-
-  // Later, replace these functions with calls to your backend, passing each range's start and end.
-  const trend = useMemo(() => getSalesTrend(pageRange), [pageRange])
-  const revenue = useMemo(() => getRevenueComparison(pageRange), [pageRange])
-  const categories = useMemo(() => getCategorySales(categoryRange), [categoryRange])
-  const topSelling = useMemo(() => getTopSellingProducts(productRange), [productRange])
+  const trend = useAnalytics('sales-trend', dateRange, asIs)
+  const revenue = useAnalytics('revenue-analysis', dateRange, asIs)
+  const categories = useAnalytics('category-sales', categoryFilter, categoriesOf)
+  const topSelling = useAnalytics('top-products', productFilter, productsOf)
 
   return (
     <div className="sales-insights-page mx-auto min-w-0 max-w-[1400px] space-y-6">
@@ -61,24 +83,36 @@ export default function SalesInsightsPage() {
         <SalesInsightsHeader dateRange={dateRange} onDateRangeChange={handlePageRangeChange} />
       </Reveal>
       <Reveal delay={80} className="relative z-20">
-        <SalesByCategory
-          data={categories}
-          dateRange={categoryFilter}
-          onDateRangeChange={setCategoryOverride}
-        />
+        <Loaded load={categories} label="sales by category">
+          {(data) => (
+            <SalesByCategory
+              data={data}
+              dateRange={categoryFilter}
+              onDateRangeChange={setCategoryOverride}
+            />
+          )}
+        </Loaded>
       </Reveal>
       <Reveal delay={160}>
-        <SalesTrend data={trend} />
+        <Loaded load={trend} label="the sales trend">
+          {(data) => <SalesTrend data={data} />}
+        </Loaded>
       </Reveal>
       <Reveal delay={240} className="relative z-10">
-        <TopSellingProducts
-          products={topSelling}
-          dateRange={productFilter}
-          onDateRangeChange={setProductOverride}
-        />
+        <Loaded load={topSelling} label="top selling products">
+          {(data) => (
+            <TopSellingProducts
+              products={data}
+              dateRange={productFilter}
+              onDateRangeChange={setProductOverride}
+            />
+          )}
+        </Loaded>
       </Reveal>
       <Reveal delay={320}>
-        <RevenueAnalysis data={revenue} />
+        <Loaded load={revenue} label="revenue analysis">
+          {(data) => <RevenueAnalysis data={data} />}
+        </Loaded>
       </Reveal>
     </div>
   )

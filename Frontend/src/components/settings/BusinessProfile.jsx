@@ -1,18 +1,14 @@
 
 import { useState } from "react";
 import { Building2, Upload, Save, RotateCcw } from "lucide-react";
+import SettingsLoad from "./SettingsLoad";
+import { useLoad } from "../../utils/useLoad";
+import {
+  fetchBusinessProfile,
+  saveBusinessProfile,
+  uploadBusinessLogo
+} from "../../utils/settingsApi";
 import "./BusinessProfile.css";
-
-const defaultProfile = {
-  businessName: "",
-  businessType: "",
-  ownerName: "",
-  contact: "",
-  email: "",
-  address: "",
-  description: "",
-  logo: ""
-};
 
 const translations = {
   English: {
@@ -52,6 +48,7 @@ const translations = {
     imageError: "Please select a valid image file.",
     sizeError: "Logo size must be less than 2 MB.",
     success: "Business profile saved successfully!",
+    logoSaved: "Logo uploaded successfully!",
     saveError: "Unable to save. Your logo may be too large."
   },
 
@@ -92,6 +89,7 @@ const translations = {
     imageError: "कृपया सही इमेज फ़ाइल चुनें।",
     sizeError: "लोगो का आकार 2 MB से कम होना चाहिए।",
     success: "व्यवसाय प्रोफ़ाइल सफलतापूर्वक सेव हो गई!",
+    logoSaved: "लोगो सफलतापूर्वक अपलोड हो गया!",
     saveError: "सेव नहीं हो पाया। आपका लोगो बहुत बड़ा हो सकता है।"
   },
 
@@ -132,23 +130,15 @@ const translations = {
     imageError: "Valid image file select karein.",
     sizeError: "Logo ka size 2 MB se kam hona chahiye.",
     success: "Business profile successfully save ho gayi!",
+    logoSaved: "Logo successfully upload ho gaya!",
     saveError: "Save nahi ho paya. Logo ka size zyada ho sakta hai."
   }
 };
 
-function BusinessProfile({ language = "English" }) {
+function BusinessProfileForm({ language = "English", initial }) {
   const t = translations[language] || translations.English;
 
-  const [formData, setFormData] = useState(() => {
-    try {
-      const saved = localStorage.getItem("bizpilot-profile");
-      return saved
-        ? { ...defaultProfile, ...JSON.parse(saved) }
-        : defaultProfile;
-    } catch {
-      return defaultProfile;
-    }
-  });
+  const [formData, setFormData] = useState(initial);
 
   const [savedData, setSavedData] = useState(formData);
   const [errors, setErrors] = useState({});
@@ -170,12 +160,16 @@ function BusinessProfile({ language = "English" }) {
     setMessage("");
   };
 
-  const handleLogoUpload = (e) => {
-    const file = e.target.files[0];
+  // The logo is uploaded as soon as it is chosen (it has its own request); the rest of the
+  // form is saved with the button below.
+  const handleLogoUpload = async (e) => {
+    const input = e.target;
+    const file = input.files[0];
+    input.value = "";
 
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
+    if (!["image/png", "image/jpeg"].includes(file.type)) {
       setMessage(t.imageError);
       return;
     }
@@ -185,16 +179,15 @@ function BusinessProfile({ language = "English" }) {
       return;
     }
 
-    const reader = new FileReader();
+    try {
+      const logo = await uploadBusinessLogo(file);
 
-    reader.onload = () => {
-      setFormData((prev) => ({
-        ...prev,
-        logo: reader.result
-      }));
-    };
-
-    reader.readAsDataURL(file);
+      setFormData((prev) => ({ ...prev, logo }));
+      setSavedData((prev) => ({ ...prev, logo }));
+      setMessage(t.logoSaved);
+    } catch (error) {
+      setMessage(error.message);
+    }
   };
 
   const validateForm = () => {
@@ -228,21 +221,19 @@ function BusinessProfile({ language = "English" }) {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
 
     if (!validateForm()) return;
 
     try {
-      localStorage.setItem(
-        "bizpilot-profile",
-        JSON.stringify(formData)
-      );
+      const saved = await saveBusinessProfile(formData);
 
-      setSavedData(formData);
+      setFormData(saved);
+      setSavedData(saved);
       setMessage(t.success);
-    } catch {
-      setMessage(t.saveError);
+    } catch (error) {
+      setMessage(error.message || t.saveError);
     }
   };
 
@@ -289,7 +280,7 @@ function BusinessProfile({ language = "English" }) {
 
               <input
                 type="file"
-                accept="image/png,image/jpeg,image/webp"
+                accept="image/png,image/jpeg"
                 onChange={handleLogoUpload}
                 hidden
               />
@@ -430,6 +421,20 @@ function BusinessProfile({ language = "English" }) {
 
       </form>
     </div>
+  );
+}
+
+async function loadBusinessProfile() {
+  return fetchBusinessProfile();
+}
+
+function BusinessProfile({ language = "English" }) {
+  const load = useLoad(loadBusinessProfile);
+
+  return (
+    <SettingsLoad language={language} load={load}>
+      {(initial) => <BusinessProfileForm language={language} initial={initial} />}
+    </SettingsLoad>
   );
 }
 

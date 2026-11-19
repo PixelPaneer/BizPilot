@@ -8,6 +8,7 @@ import {
   EyeOff,
   Save
 } from "lucide-react";
+import { changePassword } from "../../utils/settingsApi";
 import "./AccountSecurity.css";
 
 const translations = {
@@ -123,7 +124,7 @@ function AccountSecurity({ language = "English" }) {
     setMessage("");
   };
 
-  const handlePasswordUpdate = (event) => {
+  const handlePasswordUpdate = async (event) => {
     event.preventDefault();
 
     if (
@@ -145,15 +146,19 @@ function AccountSecurity({ language = "English" }) {
       return;
     }
 
-    setMessage(
-      "Frontend demo only: connect a secure backend to update passwords."
-    );
+    try {
+      await changePassword(passwords.current, passwords.newPassword);
 
-    setPasswords({
-      current: "",
-      newPassword: "",
-      confirm: ""
-    });
+      setPasswords({
+        current: "",
+        newPassword: "",
+        confirm: ""
+      });
+      setMessage(t.saved);
+    } catch (error) {
+      // Keep what was typed so a wrong current password can simply be corrected.
+      setMessage(error.message);
+    }
   };
 
   const handleTwoFactor = () => {

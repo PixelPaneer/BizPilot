@@ -1,4 +1,12 @@
 import { useState } from "react";
+import SettingsLoad from "./SettingsLoad";
+import { useLoad } from "../../utils/useLoad";
+import {
+  fetchSettings,
+  saveSettings,
+  toNotificationPreferences,
+  fromNotificationPreferences
+} from "../../utils/settingsApi";
 import { Bell, Mail, FileText, Save, RotateCcw } from "lucide-react";
 import "./NotificationsReports.css";
 
@@ -79,26 +87,14 @@ const defaultPreferences = {
   frequency: "Weekly",
 };
 
-function getSavedPreferences() {
-  try {
-    const saved = JSON.parse(
-      localStorage.getItem("bizpilot-notification-preferences") || "{}"
-    );
-
-    return {
-      ...defaultPreferences,
-      ...saved,
-    };
-  } catch (error) {
-    console.error("Unable to read notification preferences from local storage.", error);
-    return defaultPreferences;
-  }
+async function loadNotificationPreferences() {
+  return toNotificationPreferences(await fetchSettings());
 }
 
-function NotificationsReports({ language = "English" }) {
+function NotificationsReportsForm({ language = "English", initial }) {
   const t = translations[language] || translations.English;
 
-  const [preferences, setPreferences] = useState(getSavedPreferences);
+  const [preferences, setPreferences] = useState(initial);
   const [message, setMessage] = useState("");
 
   const handleToggle = (field) => {
@@ -109,12 +105,15 @@ function NotificationsReports({ language = "English" }) {
     setMessage("");
   };
 
-  const handleSave = () => {
-    localStorage.setItem(
-      "bizpilot-notification-preferences",
-      JSON.stringify(preferences)
-    );
-    setMessage(t.saved);
+  const handleSave = async () => {
+    try {
+      const saved = await saveSettings(fromNotificationPreferences(preferences));
+
+      setPreferences(toNotificationPreferences(saved));
+      setMessage(t.saved);
+    } catch (error) {
+      setMessage(error.message);
+    }
   };
 
   const handleReset = () => {
@@ -253,6 +252,18 @@ function NotificationsReports({ language = "English" }) {
         </button>
       </div>
     </div>
+  );
+}
+
+function NotificationsReports({ language = "English" }) {
+  const load = useLoad(loadNotificationPreferences);
+
+  return (
+    <SettingsLoad language={language} load={load}>
+      {(initial) => (
+        <NotificationsReportsForm language={language} initial={initial} />
+      )}
+    </SettingsLoad>
   );
 }
 

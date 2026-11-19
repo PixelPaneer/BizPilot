@@ -15,6 +15,8 @@ import UpdateStockPage from './components/stock/UpdateStockPage'
 import Sidebar from './components/Sidebar'
 import SignIn from './SignIn'
 import { translations } from './context/language'
+import { fetchSettings, toLanguagePreferences } from './utils/settingsApi'
+import { applyTheme } from './utils/theme'
 import { pages } from './data/pages'
 import { getGreeting, getStockStatus } from './utils/inventoryUtils'
 
@@ -68,6 +70,32 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [requestedProductId, setRequestedProductId] = useState(null)
   const [language, setLanguage] = useState(getSavedLanguage)
+
+  // After sign-in, the language and theme saved on the server replace the copy kept in this
+  // browser (so they follow the owner to another device). If the request fails, the browser's
+  // copy stays in use.
+  useEffect(() => {
+    if (!isAuthenticated) return undefined
+
+    let cancelled = false
+    fetchSettings()
+      .then((settings) => {
+        if (cancelled) return
+        const preferences = toLanguagePreferences(settings)
+        try {
+          localStorage.setItem(LANGUAGE_PREFERENCES_KEY, JSON.stringify(preferences))
+        } catch (error) {
+          console.error('Unable to remember the language preferences.', error)
+        }
+        applyTheme(preferences.theme)
+        if (translations[preferences.language]) setLanguage(preferences.language)
+      })
+      .catch((error) => console.error('Unable to load the saved preferences.', error))
+
+    return () => {
+      cancelled = true
+    }
+  }, [isAuthenticated])
 
   useEffect(() => {
     if (!isSidebarOpen) return

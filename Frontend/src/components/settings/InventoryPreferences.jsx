@@ -1,13 +1,15 @@
 
 import { useState } from "react";
 import { Package, Bell, Save, RotateCcw } from "lucide-react";
+import SettingsLoad from "./SettingsLoad";
+import { useLoad } from "../../utils/useLoad";
+import {
+  fetchSettings,
+  saveSettings,
+  toInventoryPreferences,
+  fromInventoryPreferences
+} from "../../utils/settingsApi";
 import "./InventoryPreferences.css";
-
-const defaultPreferences = {
-  stockAlerts: true,
-  lowStockAlerts: true,
-  outOfStockAlerts: true
-};
 
 const translations = {
   English: {
@@ -68,19 +70,14 @@ const translations = {
   }
 };
 
-function InventoryPreferences({ language = "English" }) {
+async function loadInventoryPreferences() {
+  return toInventoryPreferences(await fetchSettings());
+}
+
+function InventoryPreferencesForm({ language = "English", initial }) {
   const t = translations[language] || translations.English;
 
-  const [preferences, setPreferences] = useState(() => {
-    try {
-      const saved = localStorage.getItem("bizpilot-inventory-preferences");
-      return saved
-        ? { ...defaultPreferences, ...JSON.parse(saved) }
-        : defaultPreferences;
-    } catch {
-      return defaultPreferences;
-    }
-  });
+  const [preferences, setPreferences] = useState(initial);
 
   const [savedPreferences, setSavedPreferences] = useState(preferences);
   const [message, setMessage] = useState("");
@@ -94,17 +91,16 @@ function InventoryPreferences({ language = "English" }) {
     setMessage("");
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     try {
-      localStorage.setItem(
-        "bizpilot-inventory-preferences",
-        JSON.stringify(preferences)
-      );
+      const saved = await saveSettings(fromInventoryPreferences(preferences));
+      const next = toInventoryPreferences(saved);
 
-      setSavedPreferences(preferences);
+      setPreferences(next);
+      setSavedPreferences(next);
       setMessage(t.success);
-    } catch {
-      setMessage(t.error);
+    } catch (error) {
+      setMessage(`${t.error} ${error.message}`);
     }
   };
 
@@ -241,6 +237,18 @@ function InventoryPreferences({ language = "English" }) {
       </div>
 
     </div>
+  );
+}
+
+function InventoryPreferences({ language = "English" }) {
+  const load = useLoad(loadInventoryPreferences);
+
+  return (
+    <SettingsLoad language={language} load={load}>
+      {(initial) => (
+        <InventoryPreferencesForm language={language} initial={initial} />
+      )}
+    </SettingsLoad>
   );
 }
 
