@@ -12,7 +12,24 @@ const upload = multer({
     }
     cb(null, true);
   },
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2 MB
+  limits: { fileSize: 2 * 1024 * 1024, files: 1 }, // 2 MB
 });
+
+const singleLogo = upload.single("logo");
+
+// Runs multer and turns its errors into the API's normal 400 responses.
+export function uploadLogo(req, res, next) {
+  singleLogo(req, res, (error) => {
+    if (!error) return next();
+    if (error instanceof multer.MulterError) {
+      const message =
+        error.code === "LIMIT_FILE_SIZE"
+          ? "The logo must be 2 MB or smaller"
+          : "Upload a single image in the 'logo' field";
+      return next(new ApiError(400, message));
+    }
+    return next(error);
+  });
+}
 
 export default upload;

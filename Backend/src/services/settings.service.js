@@ -11,9 +11,22 @@ export async function getProfile(businessId) {
   return required(await settingsModel.getBusinessProfile(businessId), "Business profile not found");
 }
 
+// A duplicate email (unique index) is the owner's input problem, not a server fault.
+async function orConflict(action, message) {
+  try {
+    return await action();
+  } catch (error) {
+    if (error.code === "23505") throw new ApiError(409, message);
+    throw error;
+  }
+}
+
 export async function saveProfile(businessId, data) {
   return required(
-    await settingsModel.updateBusinessProfile(businessId, data),
+    await orConflict(
+      () => settingsModel.updateBusinessProfile(businessId, data),
+      "A business with these details already exists"
+    ),
     "Business profile not found"
   );
 }
@@ -44,7 +57,13 @@ export async function getAccountDetails(userId) {
 }
 
 export async function saveAccountDetails(userId, data) {
-  return required(await settingsModel.updateAccount(userId, data), "Account not found");
+  return required(
+    await orConflict(
+      () => settingsModel.updateAccount(userId, data),
+      "This email is already used by another account"
+    ),
+    "Account not found"
+  );
 }
 
 export async function changePassword(userId, currentPassword, newPassword) {

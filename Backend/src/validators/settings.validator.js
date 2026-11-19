@@ -59,6 +59,53 @@ export function validateBusinessProfile(req, res, next) {
   next();
 }
 
+export function validateAccount(req, res, next) {
+  const body = req.body ?? {};
+
+  for (const field of ["first_name", "last_name", "email", "whatsapp_number"]) {
+    if (typeof body[field] !== "string" || !body[field].trim()) {
+      return next(bad(`${field} is required`));
+    }
+  }
+
+  // Trimmed values are what get stored, so the model sees clean text.
+  for (const field of ["first_name", "last_name", "email", "whatsapp_number"]) {
+    body[field] = body[field].trim();
+  }
+
+  if (body.first_name.length > 60 || body.last_name.length > 60) {
+    return next(bad("Names can be at most 60 characters"));
+  }
+  if (body.email.length > 150 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email)) {
+    return next(bad("Invalid email"));
+  }
+  if (!/^\+?[0-9]{10,19}$/.test(body.whatsapp_number)) {
+    return next(bad("Invalid WhatsApp number"));
+  }
+
+  next();
+}
+
+export function validatePasswordChange(req, res, next) {
+  const { currentPassword, newPassword } = req.body ?? {};
+
+  if (typeof currentPassword !== "string" || !currentPassword) {
+    return next(bad("currentPassword is required"));
+  }
+  if (typeof newPassword !== "string" || newPassword.length < 8) {
+    return next(bad("New password must be at least 8 characters"));
+  }
+  // bcrypt only uses the first 72 bytes, so a longer password would be silently cut short.
+  if (Buffer.byteLength(newPassword, "utf8") > 72) {
+    return next(bad("New password is too long (72 bytes at most)"));
+  }
+  if (newPassword === currentPassword) {
+    return next(bad("New password must be different from the current password"));
+  }
+
+  next();
+}
+
 // Validates the body of PATCH /settings: only known fields, with the right types and values.
 export function validateSettings(req, res, next) {
   const body = req.body;

@@ -117,6 +117,11 @@ export async function updateAccount(userId, data) {
   const result = await pool.query(
     `UPDATE app_users
         SET first_name = $1, last_name = $2, email = $3,
+            -- a changed number must be verified again
+            whatsapp_verified_at = CASE
+              WHEN whatsapp_number IS DISTINCT FROM $4 THEN NULL
+              ELSE whatsapp_verified_at
+            END,
             whatsapp_number = $4, updated_at = CURRENT_TIMESTAMP
       WHERE user_id = $5
       RETURNING user_id, first_name, last_name, email, whatsapp_number, is_active`,
