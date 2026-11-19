@@ -1,8 +1,0 @@
-# Environment variables
-.env
-
-# Database schema folder
-db_schema/
-
-# Dependencies
-node_modules/
