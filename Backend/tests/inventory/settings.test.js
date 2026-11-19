@@ -322,4 +322,16 @@ if (!process.env.TEST_DATABASE_URL) {
     assert.equal(tooBig.status, 400);
     assert.match(tooBig.body.message, /2 MB/);
   });
+
+  test(
+    "POST /settings/profile/logo says so plainly when Cloudinary is not configured",
+    { skip: Boolean(process.env.CLOUDINARY_CLOUD_NAME) },
+    async () => {
+      const response = await request(app)
+        .post("/api/v1/settings/profile/logo")
+        .attach("logo", Buffer.from("png-bytes"), { filename: "logo.png", contentType: "image/png" });
+      assert.equal(response.status, 503);
+      assert.equal(response.body.code, "UPLOAD_NOT_CONFIGURED");
+    }
+  );
 }

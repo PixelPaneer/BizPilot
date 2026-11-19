@@ -31,6 +31,15 @@ export const updateBusinessProfile = asyncHandler(async (req, res) => {
 export const uploadBusinessLogo = asyncHandler(async (req, res) => {
   if (!req.file) throw new ApiError(400, "Please select a logo to upload");
 
+  if (!cloudinary.config().cloud_name || !cloudinary.config().api_key) {
+    throw new ApiError(
+      503,
+      "Logo uploads are not set up on this server yet.",
+      [],
+      "UPLOAD_NOT_CONFIGURED"
+    );
+  }
+
   const uploadResult = await new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       { folder: "bizpilot/business-logos", resource_type: "image" },

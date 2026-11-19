@@ -25,17 +25,8 @@ app.get("/health", (req, res) => {
   res.status(200).json({ success: true, message: "BizPilot API is running" });
 });
 
-/*
- * IMPORTANT:
- * Mount the team's verified authentication middleware here, before analytics.
- * It must set req.user.businessId from a verified token/session.
- * Example only (replace with the real middleware):
- * app.use("/api/analytics", yourAuthMiddleware, analyticsRoutes);
- *
- * Current routes include requireBusinessContext, which returns 401 unless
- * req.user.businessId has already been populated.
- */
-app.use("/api/analytics", analyticsRoutes);
+// The analytics router applies requireBusinessContext itself, so it only needs authenticate here.
+app.use("/api/v1/analytics", authenticate, analyticsRoutes);
 app.use(
   "/api/v1/products",
   authenticate,
