@@ -2,6 +2,7 @@ import { useState } from "react";
 import Logo from "./Logo.jsx";
 import hero from "./assets/hero.jpg";
 import SignUp from "./SignUp.jsx";
+import { useAuth } from "./context/contextValues";
 import {
   Mail,
   Lock,
@@ -41,7 +42,8 @@ const inputWrap =
   "flex h-[50px] items-center gap-2.5 rounded-xl border bg-[var(--auth-input)] px-3.5 text-muted transition " +
   "focus-within:border-brand-500 focus-within:text-brand-700 focus-within:ring-4 focus-within:ring-mint-100";
 
-export default function SignIn({ onSignIn }) {
+export default function SignIn({ onSignedIn }) {
+  const { signIn: signInOwner } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
@@ -64,11 +66,15 @@ export default function SignIn({ onSignIn }) {
     setErrors(e);
     if (Object.keys(e).length) return;
     setLoading(true);
-    // TODO: replace with your API call, e.g. await api.post("/auth/login", { email, password })
-    await new Promise((r) => setTimeout(r, 900));
+    try {
+      await signInOwner(email.trim(), password);
+    } catch (error) {
+      setErrors({ form: error.message });
+      setLoading(false);
+      return;
+    }
     setLoading(false);
-    console.log("Signed in:", { email });
-    onSignIn?.();
+    onSignedIn?.();
   };
 
   return (
@@ -200,6 +206,12 @@ export default function SignIn({ onSignIn }) {
               )}
             </div>
 
+            {errors.form && (
+              <p role="alert" className="mb-4 rounded-xl border border-danger-700 px-3.5 py-2.5 text-sm text-danger-700">
+                {errors.form}
+              </p>
+            )}
+
             <a
               href="#forgot"
               className="-mt-1 mb-[22px] block text-right text-sm font-semibold text-brand-700 hover:underline"
@@ -245,7 +257,7 @@ export default function SignIn({ onSignIn }) {
             </div>
             <SignUp
               onSignIn={() => setSignIn(true)}
-              onAccountCreated={onSignIn}
+              onAccountCreated={onSignedIn}
             />
           </div>
         </section>

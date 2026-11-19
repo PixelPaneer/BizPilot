@@ -51,7 +51,7 @@ function getPageHeading(pageId, profile) {
 
 function App() {
   const navigate = useNavigate()
-  const { isAuthenticated, signIn, signOut } = useAuth()
+  const { isAuthenticated, signOut } = useAuth()
   const { profile } = useProfile()
   const {
     products,
@@ -127,8 +127,8 @@ function App() {
     navigate('/signIn', { replace: true })
   }
 
-  function handleSignIn() {
-    signIn()
+  // Called after the sign-in (or sign-up) form has signed the owner in.
+  function handleSignedIn() {
     openSummaryAlert()
     navigate('/dashboard', { replace: true })
   }
@@ -296,7 +296,7 @@ function App() {
 
   return (
     <Routes>
-      <Route path="/signIn" element={<SignIn onSignIn={handleSignIn} />} />
+      <Route path="/signIn" element={<SignIn onSignedIn={handleSignedIn} />} />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/dashboard" element={protectedPage(renderDashboardPage('dashboard', <Dashboard period={period} onPeriodChange={setPeriod} />, {
         showSmallScreenHeading: true,
