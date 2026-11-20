@@ -47,8 +47,8 @@ export function AuthProvider({ children }) {
   }, [])
 
   // Throws ApiRequestError (wrong password, inactive account, server down) for the form to show.
-  async function signIn(email, password) {
-    const { accessToken } = await loginOwner(email, password)
+  async function signIn(identifier, password) {
+    const { accessToken } = await loginOwner(identifier, password)
     setAccessToken(accessToken)
     setStatus('signedIn')
   }

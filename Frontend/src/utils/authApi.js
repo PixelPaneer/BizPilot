@@ -10,9 +10,35 @@ export function registerOwner({ firstName, lastName, email, whatsappNumber, pass
   })
 }
 
+export function normalizeWhatsAppNumber(value) {
+  const number = value.trim().replace(/[\s()-]/g, '')
+  if (/^[6-9]\d{9}$/.test(number)) return `+91${number}`
+  if (/^\+91[6-9]\d{9}$/.test(number)) return number
+  return null
+}
+
 // Returns { user, accessToken }.
-export function loginOwner(email, password) {
-  return apiRequest('/auth/login', { method: 'POST', body: { email, password } })
+export function loginOwner(identifier, password) {
+  const whatsappNumber = normalizeWhatsAppNumber(identifier)
+  const credentials = whatsappNumber
+    ? { whatsappNumber, password }
+    : { email: identifier.trim().toLowerCase(), password }
+
+  return apiRequest('/auth/login', { method: 'POST', body: credentials })
+}
+
+export function sendWhatsAppOtp(whatsappNumber) {
+  return apiRequest('/auth/whatsapp/send-otp', {
+    method: 'POST',
+    body: { whatsappNumber },
+  })
+}
+
+export function verifyWhatsAppOtp(whatsappNumber, otp) {
+  return apiRequest('/auth/whatsapp/verify-otp', {
+    method: 'POST',
+    body: { whatsappNumber, otp },
+  })
 }
 
 // Ends the sign-in on the server (the refresh cookie stops working).

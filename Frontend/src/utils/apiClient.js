@@ -12,7 +12,14 @@ import {
 const API_BASE = '/api/v1'
 
 // Calls that must not trigger a refresh and a retry when they answer 401.
-const AUTH_PATHS = ['/auth/login', '/auth/register', '/auth/refresh', '/auth/logout']
+const AUTH_PATHS = [
+  '/auth/login',
+  '/auth/register',
+  '/auth/refresh',
+  '/auth/logout',
+  '/auth/whatsapp/send-otp',
+  '/auth/whatsapp/verify-otp',
+]
 
 export class ApiRequestError extends Error {
   constructor(message, { status = 0, code = null, errors = [] } = {}) {
@@ -42,6 +49,7 @@ export function refreshAccessToken() {
   return refreshInFlight
 }
 
+// For Refresh token functionality (When the user revisits BizPilot, the frontend tries to restore their session using the refresh token.)
 async function requestRefresh() {
   let response
   try {

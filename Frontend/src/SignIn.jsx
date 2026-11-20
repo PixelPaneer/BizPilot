@@ -3,6 +3,7 @@ import Logo from "./Logo.jsx";
 import hero from "./assets/hero.jpg";
 import SignUp from "./SignUp.jsx";
 import { useAuth } from "./context/contextValues";
+import { normalizeWhatsAppNumber } from "./utils/authApi.js";
 import {
   Mail,
   Lock,
@@ -44,7 +45,7 @@ const inputWrap =
 
 export default function SignIn({ onSignedIn }) {
   const { signIn: signInOwner } = useAuth();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
   const [signIn, setSignIn] = useState(true); // true: sign in, false: sign up
@@ -53,9 +54,10 @@ export default function SignIn({ onSignedIn }) {
 
   const validate = () => {
     const e = {};
-    if (!email.trim()) e.email = "Enter your email address.";
-    else if (!/^\S+@\S+\.\S+$/.test(email))
-      e.email = "Enter a valid email address.";
+    const value = identifier.trim();
+    if (!value) e.identifier = "Enter your email address or WhatsApp number.";
+    else if (!/^\S+@\S+\.\S+$/.test(value) && !normalizeWhatsAppNumber(value))
+      e.identifier = "Enter a valid email address or 10-digit WhatsApp number.";
     if (!password) e.password = "Enter your password.";
     return e;
   };
@@ -67,7 +69,7 @@ export default function SignIn({ onSignedIn }) {
     if (Object.keys(e).length) return;
     setLoading(true);
     try {
-      await signInOwner(email.trim(), password);
+      await signInOwner(identifier.trim(), password);
     } catch (error) {
       setErrors({ form: error.message });
       setLoading(false);
@@ -142,29 +144,37 @@ export default function SignIn({ onSignedIn }) {
           <form onSubmit={handleSubmit} noValidate>
             <div className="mb-[18px]">
               <label
-                htmlFor="email"
+                htmlFor="identifier"
                 className="mb-2 block text-sm font-semibold text-ink"
               >
-                Email
+                Email or WhatsApp number
               </label>
               <div
-                className={`${inputWrap} ${errors.email ? "border-danger-700" : "border-line"}`}
+                className={`${inputWrap} ${errors.identifier ? "border-danger-700" : "border-line"}`}
               >
                 <Mail />
                 <input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="Enter your email address"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  aria-invalid={!!errors.email}
+                  id="identifier"
+                  type="text"
+                  autoComplete="username"
+                  placeholder="Enter email or +91 mobile number"
+                  value={identifier}
+                  onChange={(e) => {
+                    setIdentifier(e.target.value);
+                    setErrors((current) => {
+                      const next = { ...current };
+                      delete next.identifier;
+                      delete next.form;
+                      return next;
+                    });
+                  }}
+                  aria-invalid={!!errors.identifier}
                   className="min-w-0 flex-1 bg-transparent text-[15px] text-ink outline-none placeholder:text-[#9aa59e]"
                 />
               </div>
-              {errors.email && (
+              {errors.identifier && (
                 <p role="alert" className="mt-1.5 text-[13px] text-danger-700">
-                  {errors.email}
+                  {errors.identifier}
                 </p>
               )}
             </div>
