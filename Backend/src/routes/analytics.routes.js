@@ -3,6 +3,7 @@ import {
   categorySales,
   salesTrend,
   topProducts,
+  slowMovers,
   revenueAnalysis,
 } from "../controllers/analytics.controller.js";
 import { requireBusinessContext } from "../middleware/requireBusinessContext.js";
@@ -14,6 +15,7 @@ router.use(requireBusinessContext);
 router.get("/category-sales", validateAnalyticsQuery, categorySales);
 router.get("/sales-trend", validateAnalyticsQuery, salesTrend);
 router.get("/top-products", validateAnalyticsQuery, topProducts);
+router.get("/slow-movers", validateAnalyticsQuery, slowMovers);
 router.get("/revenue-analysis", validateAnalyticsQuery, revenueAnalysis);
 
 export default router;

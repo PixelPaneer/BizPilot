@@ -4,6 +4,13 @@ import { validateProductListQuery } from "./product.validator.js";
 
 export const validateInventoryListQuery = validateProductListQuery;
 
+// days: how many days of sales the pace is judged on; limit: how many suggestions to return.
+export const validateReorderQuery = [
+  query("days").optional().isInt({ min: 7, max: 90 }).toInt(),
+  query("limit").optional().isInt({ min: 1, max: 50 }).toInt(),
+  validate,
+];
+
 export const validateAlertQuery = [
   query("status").optional().isIn(["ACTIVE", "RESOLVED"]),
   validate,

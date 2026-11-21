@@ -19,6 +19,14 @@ export const getAlerts = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, data });
 });
 
+export const getReorderSuggestions = asyncHandler(async (req, res) => {
+  const data = await inventoryService.getReorderSuggestions(req.businessId, {
+    days: req.query.days,
+    limit: req.query.limit,
+  });
+  res.status(200).json({ success: true, data });
+});
+
 export const adjustInventory = asyncHandler(async (req, res) => {
   const data = await inventoryService.adjustInventory(
     req.businessId,

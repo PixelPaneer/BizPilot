@@ -16,6 +16,11 @@ export const topProducts = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, data });
 });
 
+export const slowMovers = asyncHandler(async (req, res) => {
+  const data = await analyticsService.getSlowMovers(req.businessId, req.query);
+  res.status(200).json({ success: true, data });
+});
+
 export const revenueAnalysis = asyncHandler(async (req, res) => {
   const data = await analyticsService.getRevenueAnalysis(req.businessId, req.query);
   res.status(200).json({ success: true, data });

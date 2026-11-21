@@ -17,7 +17,7 @@ function isValidDate(value) {
 }
 
 export function validateAnalyticsQuery(req, res, next) {
-  const { period = "last30", startDate, endDate, limit } = req.query;
+  const { period = "last30", startDate, endDate, limit, sort } = req.query;
 
   // 1. Reject duplicate or non-string query parameters.
   for (const [key, value] of Object.entries(req.query)) {
@@ -60,6 +60,11 @@ export function validateAnalyticsQuery(req, res, next) {
         new ApiError(400, "limit must be between 1 and 50")
       );
     }
+  }
+
+  // 3b. Validate the sort order (used by top-products and slow-movers).
+  if (sort !== undefined && sort !== "units" && sort !== "revenue") {
+    return next(new ApiError(400, "sort must be units or revenue"));
   }
 
   // 4. Validate custom date range.
