@@ -1,4 +1,3 @@
-import { randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
 import { pool, withTransaction } from "../src/config/db.js";
 import { DEFAULT_CATEGORIES } from "../src/constants/index.js";
@@ -43,17 +42,16 @@ const products = [
 }));
 
 async function seedDev() {
-  const passwordHash = await bcrypt.hash(
-    randomBytes(32).toString("hex"),
-    10
-  );
+  // A known password so the demo owner can sign in through the app. Development use only.
+  const demoPassword = process.env.DEMO_PASSWORD || "demo-password";
+  const passwordHash = await bcrypt.hash(demoPassword, 10);
 
   const userId = await withTransaction(async (client) => {
     let userResult = await client.query(
       `INSERT INTO app_users
          (first_name, last_name, email, password_hash, whatsapp_number)
        VALUES ($1, $2, $3, $4, $5)
-       ON CONFLICT (LOWER(email)) DO NOTHING
+       ON CONFLICT (LOWER(email)) DO UPDATE SET password_hash = EXCLUDED.password_hash
        RETURNING user_id`,
       ["Demo", "User", "demo@bizpilot.local", passwordHash, "9999999999"]
     );
@@ -177,6 +175,7 @@ async function seedDev() {
   });
 
   console.log(`Development user id: ${userId}`);
+  console.log(`Demo sign-in: demo@bizpilot.local / ${demoPassword}`);
 }
 
 try {

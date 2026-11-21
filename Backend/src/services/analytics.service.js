@@ -356,6 +356,10 @@ export async function getTopProducts(
   if (!Number.isInteger(limit) || limit < 1 || limit > 50) {
     throw new ApiError(400, "limit must be between 1 and 50");
   }
+
+  // Revenue first (the default) or units first. Picked from a fixed list, never from user text.
+  const orderBy = TOP_PRODUCTS_ORDER[filters.sort ?? "revenue"] ?? TOP_PRODUCTS_ORDER.revenue;
+
   const { rows } = await pool.query(
     `SELECT
        si.product_id,
@@ -384,9 +388,7 @@ export async function getTopProducts(
        si.product_name_snapshot,
        si.category_snapshot
 
-     ORDER BY
-       SUM(si.revenue) DESC,
-       SUM(si.quantity) DESC
+     ORDER BY ${orderBy}
 
      LIMIT $4`,
     [
@@ -434,4 +436,84 @@ export async function getRevenueAnalysis(
   }
 
   return result;
+}
+
+// ---------------------------------------------------------------------------------------------
+// TOP PRODUCTS SORT ORDER AND SLOW MOVERS
+// ---------------------------------------------------------------------------------------------
+
+const TOP_PRODUCTS_ORDER = {
+  revenue: "SUM(si.revenue) DESC, SUM(si.quantity) DESC",
+  units: "SUM(si.quantity) DESC, SUM(si.revenue) DESC",
+};
+
+const SLOW_MOVERS_ORDER = {
+  units: "COALESCE(sold.units_sold, 0) ASC, i.available_quantity DESC, p.product_name ASC",
+  revenue:
+    "COALESCE(sold.revenue, 0) ASC, COALESCE(sold.units_sold, 0) ASC, i.available_quantity DESC, p.product_name ASC",
+};
+
+// A product must have been in the shop for this long before it can be called slow: a product
+// added yesterday has not had a fair chance to sell.
+export const SLOW_MOVER_MIN_AGE_DAYS = 7;
+
+// Products that are in stock but sell little in the period (including products that did not sell
+// at all), slowest first. `sort` decides what "slowest" means: fewest units or least revenue.
+export async function getSlowMovers(businessId, filters) {
+  const range = getDateRange(filters);
+  const limit = Number(filters.limit ?? 10);
+
+  if (!Number.isInteger(limit) || limit < 1 || limit > 50) {
+    throw new ApiError(400, "limit must be between 1 and 50");
+  }
+
+  const orderBy = SLOW_MOVERS_ORDER[filters.sort ?? "units"] ?? SLOW_MOVERS_ORDER.units;
+  const addedBefore = new Date(Date.now() - SLOW_MOVER_MIN_AGE_DAYS * 86400000);
+
+  const { rows } = await pool.query(
+    `SELECT p.product_id,
+            p.product_name,
+            p.category,
+            p.unit,
+            i.available_quantity AS quantity,
+            COALESCE(sold.units_sold, 0) AS units_sold,
+            COALESCE(sold.revenue, 0) AS revenue
+       FROM products p
+       JOIN inventory i
+         ON i.business_id = p.business_id
+        AND i.product_id = p.product_id
+       LEFT JOIN (
+         SELECT si.product_id,
+                SUM(si.quantity) AS units_sold,
+                SUM(si.revenue) AS revenue
+           FROM sale_items si
+           JOIN sales s
+             ON s.sale_id = si.sale_id
+            AND s.business_id = si.business_id
+          WHERE s.business_id = $1
+            AND s.status = 'COMPLETED'
+            AND s.sale_date >= $2
+            AND s.sale_date < $3
+          GROUP BY si.product_id
+       ) sold ON sold.product_id = p.product_id
+      WHERE p.business_id = $1
+        AND p.is_active
+        AND i.available_quantity > 0
+        AND p.created_at <= $4
+      ORDER BY ${orderBy}
+      LIMIT $5`,
+    [businessId, iso(range.start), iso(range.endExclusive), addedBefore, limit]
+  );
+
+  return {
+    products: rows.map((row) => ({
+      productId: row.product_id,
+      productName: row.product_name,
+      category: row.category,
+      unit: row.unit,
+      quantity: Number(row.quantity),
+      unitsSold: Number(row.units_sold),
+      revenue: Number(row.revenue),
+    })),
+  };
 }
