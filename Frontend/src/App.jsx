@@ -190,17 +190,16 @@ function App() {
   }
 
   // Help and Settings draw their own (translated) title inside the page, so the extra small-screen
-  // heading is only added for pages that have none (the dashboard). `fit` makes the page exactly
-  // one screen tall on large screens, so it does not scroll (see .app--fit in index.css).
+  // heading is only added for pages that have none (the dashboard).
   function renderDashboardPage(
     pageId,
     content,
-    { showSmallScreenHeading = false, fit = false, headingAction = null } = {},
+    { showSmallScreenHeading = false, headingAction = null } = {},
   ) {
     const heading = getPageHeading(pageId, profile)
 
     return (
-      <div className={fit ? 'app app--fit' : 'app'}>
+      <div className="app">
         {renderChrome(heading, pageId)}
         <div className="main">
           <main className="content">
@@ -300,7 +299,6 @@ function App() {
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/dashboard" element={protectedPage(renderDashboardPage('dashboard', <Dashboard period={period} onPeriodChange={setPeriod} />, {
         showSmallScreenHeading: true,
-        fit: true,
         headingAction: <PeriodSelect value={period} onChange={setPeriod} />,
       }))} />
       <Route path="/inventory" element={protectedPage(renderInventoryPage())} />

@@ -4,6 +4,7 @@ import SummaryCard from '../components/DashboardStatCard'
 import InventorySummary from '../components/DashboardInventoryOverview'
 import RecentActivity from '../components/RecentActivity'
 import QuickActions from '../components/QuickActions'
+import StockInsights from '../components/StockInsights'
 import PeriodSelect from '../components/PeriodSelect'
 import { fetchDashboard } from '../utils/api'
 import { formatCurrency } from '../utils/inventoryUtils'
@@ -86,6 +87,9 @@ export default function Dashboard({ period, onPeriodChange }) {
         <QuickActions />
         <RecentActivity activities={data.activities} />
       </div>
+
+      {/* Row 3: Reorder suggestions | Slow movers | Fast movers */}
+      <StockInsights period={period} />
     </div>
   )
 }
