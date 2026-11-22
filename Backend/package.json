@@ -11,7 +11,7 @@
     "dev": "nodemon server.js",
     "migrate": "node scripts/migrate.js",
     "seed:dev": "node scripts/seed-dev.js",
-    "test": "node --test --test-concurrency=1 tests/inventory/foundation.test.js tests/inventory/backend.test.js tests/inventory/write-validator.test.js tests/inventory/sales.test.js tests/inventory/dashboard.test.js tests/inventory/settings.test.js tests/inventory/stock-insights.test.js tests/auth/auth.test.js tests/internal/service-auth.test.js"
+    "test": "node --test --test-concurrency=1 tests/inventory/foundation.test.js tests/inventory/backend.test.js tests/inventory/write-validator.test.js tests/inventory/sales.test.js tests/inventory/dashboard.test.js tests/inventory/settings.test.js tests/inventory/stock-insights.test.js tests/auth/auth.test.js tests/internal/service-auth.test.js tests/internal/catalog-search.test.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
