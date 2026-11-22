@@ -7,7 +7,8 @@ availability) comes from those calls, never from the model.
 
 What exists so far: the foundation (health check, service-token security in both directions, a client
 for calling Node) and the customer-query flow (`POST /internal/customer-query`): a customer's message
-in, a short reply in English, Hindi or Hinglish out. The voice and bill-photo flow comes later.
+in, a short reply in English, Hindi or Hinglish out; and the voice stock draft (`POST /internal/bills/extract`):
+a voice note in, an editable list of stock lines out. Bill photos come later.
 
 ## Run it
 
@@ -51,6 +52,7 @@ route answers 503. `GET /health` needs no token.
 | `POST /internal/ping` | Node | foundation check, Node to AI |
 | `GET /internal/check-node` | Node | foundation check, round trip: calls Node's `GET /internal/ping` |
 | `POST /internal/customer-query` | Node | `{ message, shopName? }` in, `{ reply, language, matchedCount }` out |
+| `POST /internal/bills/extract?type=` | Node | the voice note as the raw body (`Content-Type: audio/...`, 5 MB at most) in, `{ type, lines, warnings }` out; `type` is an optional `SALE` or `PURCHASE` hint |
 
 Errors have the same shape as the Node backend's: `{ success: false, message, errors, code }`.
 
@@ -66,8 +68,10 @@ app/
     customer/      the customer-query graph (understand, lookup, compose), prompts, schemas, a
                    plain-code fallback reading of a message
     inventory/     availability.py: from what a customer wrote to the shop's products (price and
-                   status only); asks the model to choose only when no match is clear
-  llm/             base.py (the client shape, so tests can fake it), gemini.py (the Gemini client)
+                   status only); asks the model to choose only when no match is clear.
+                   stock_draft.py: a voice note to a draft of stock lines
+  llm/             base.py (the client shape, so tests can fake it), gemini.py (the Gemini client),
+                   transcribe.py (speech to text for voice notes)
   tools/           node_client.py: the only way to read business data
   shared/          logging.py (metadata only: never message text, audio, images or tokens),
                    reply_templates.py (fixed replies), reply_validator.py (checks a drafted reply)
@@ -88,3 +92,16 @@ tests/
 
 The customer's message goes to the model only as the user turn of the first request; it is never in
 the instructions, never in the writing request, never sent to Node as a whole, and never logged.
+
+## How a voice note becomes a stock draft
+1. **transcribe**: the audio goes to the speech model (`GEMINI_TRANSCRIBE_MODEL`, a Flash model that
+   accepts audio) and comes back as text. Nothing is stored.
+2. **extract**: the text model reads the transcript into lines (name, quantity, unit, price) and says
+   whether it is a purchase ("50 aaye") or a sale ("5 bika"). It never invents a quantity or price.
+3. **match**: each name is searched through Node's catalog search. A product is matched only when it
+   is clearly the best candidate (similarity at least 0.6 and 0.15 ahead of the next); otherwise the
+   line is left unmatched with up to 3 candidates and a warning, for the owner to choose.
+
+The draft changes nothing: the owner corrects it on the Update Stock page and records it as a sale or
+purchase. Audio and transcript are never logged. `DEBUG_RETURN_TRANSCRIPT=true` (testing only) adds the
+transcript to the answer.

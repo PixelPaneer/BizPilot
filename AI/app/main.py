@@ -7,11 +7,12 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.agents.customer.graph import build_customer_graph
-from app.api import customer, health, internal
+from app.api import bills, customer, health, internal
 from app.config import Settings, get_settings
 from app.errors import ApiError
 from app.llm.base import LlmClient, LlmError
 from app.llm.gemini import GeminiClient
+from app.llm.transcribe import GeminiTranscriber
 from app.shared.logging import setup_logging
 from app.tools.node_client import NodeClient
 
@@ -31,12 +32,26 @@ def _make_llm(settings: Settings) -> LlmClient:
         return _NoModel()
 
 
+class _NoTranscriber:
+    async def transcribe(self, audio: bytes, mime_type: str) -> str:
+        raise LlmError("No speech model is configured.")
+
+
+def _make_transcriber(settings: Settings):
+    try:
+        return GeminiTranscriber(settings)
+    except LlmError:
+        return _NoTranscriber()
+
+
 def _error_response(status_code: int, message: str, code: str, errors: list | None = None):
     body = {"success": False, "message": message, "errors": errors or [], "code": code}
     return JSONResponse(status_code=status_code, content=body)
 
 
-def create_app(settings: Settings | None = None, llm: LlmClient | None = None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None, llm: LlmClient | None = None, transcriber=None
+) -> FastAPI:
     settings = settings or get_settings()
     setup_logging(settings.log_level)
 
@@ -48,6 +63,7 @@ def create_app(settings: Settings | None = None, llm: LlmClient | None = None) -
     app = FastAPI(title="BizPilot AI service", lifespan=lifespan)
     app.state.node_client = NodeClient(settings)
     app.state.llm = llm or _make_llm(settings)
+    app.state.transcriber = transcriber or _make_transcriber(settings)
     app.state.customer_graph = build_customer_graph(app.state.llm, app.state.node_client)
     # Tests (and the app itself) can swap the settings through FastAPI's dependency system.
     app.dependency_overrides[get_settings] = lambda: settings
@@ -55,6 +71,7 @@ def create_app(settings: Settings | None = None, llm: LlmClient | None = None) -
     app.include_router(health.router)
     app.include_router(internal.router)
     app.include_router(customer.router)
+    app.include_router(bills.router)
 
     @app.exception_handler(ApiError)
     async def handle_api_error(request: Request, error: ApiError):

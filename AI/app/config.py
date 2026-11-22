@@ -26,6 +26,16 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     gemini_text_model: str = "gemini-3.5-flash-lite"
     gemini_timeout_seconds: float = 20.0
+    # Speech to text for voice notes. It only produces text; the text model reads it afterwards.
+    # A dedicated "gemini-3.5-transcribe" model is not offered to this project's key, so a general
+    # Flash model (which accepts audio) does the listening. Check Google's models page before changing.
+    gemini_transcribe_model: str = "gemini-3.5-flash-lite"
+    # A voice note larger than this is refused (Node enforces the same limit before forwarding).
+    max_audio_bytes: int = 5 * 1024 * 1024
+    # TESTING ONLY: also return the transcript in the draft, to tell a hearing mistake from a reading
+    # mistake. It holds the owner's spoken words: never switch it on with real data, and remove it
+    # before final delivery.
+    debug_return_transcript: bool = False
     log_level: str = "info"
 
     @field_validator("service_jwt_secret")
