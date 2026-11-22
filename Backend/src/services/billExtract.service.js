@@ -1,8 +1,8 @@
 import { ApiError } from "../utils/ApiError.js";
 import { callAi } from "./aiClient.js";
 
-// Longer than the usual AI call: the service transcribes the audio and then reads it.
-const EXTRACT_TIMEOUT_MS = 45000;
+// Longer than the usual AI call: the service transcribes the audio, or reads the image, and then matches.
+const EXTRACT_TIMEOUT_MS = 60000;
 
 const toLine = (line) => ({
   rawText: line.raw_text,
@@ -19,13 +19,13 @@ const toLine = (line) => ({
   })),
 });
 
-// A voice note in, an editable stock draft out. Nothing is stored and no stock changes here: the
+// A voice note or a photo of a bill in, an editable stock draft out. Nothing is stored and no stock changes here: the
 // owner corrects the draft and then records it through POST /sales or POST /purchases.
-export async function extractFromVoice(businessId, { audio, mimeType, typeHint }) {
+export async function extractBillDraft(businessId, { file, mimeType, typeHint }) {
   const query = typeHint ? `?type=${encodeURIComponent(typeHint)}` : "";
   const draft = await callAi(businessId, `/internal/bills/extract${query}`, {
     method: "POST",
-    rawBody: audio,
+    rawBody: file,
     contentType: mimeType,
     timeoutMs: EXTRACT_TIMEOUT_MS,
   });

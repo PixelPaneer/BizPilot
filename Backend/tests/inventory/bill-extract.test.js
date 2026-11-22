@@ -209,6 +209,68 @@ if (!process.env.TEST_DATABASE_URL) {
     assert.equal(seen.url, undefined, "the AI service was never called");
   });
 
+  const PHOTO = Buffer.from("not-really-a-jpeg-just-bytes");
+  const photo = (req, type = "image/jpeg") =>
+    req.attach("image", PHOTO, { filename: "bill.jpg", contentType: type });
+
+  test("a bill photo, from a file or straight from the camera, is forwarded as an image", async () => {
+    const response = await extract((req) => photo(req));
+    assert.equal(response.status, 200);
+    assert.equal(response.body.data.lines[0].matchedProductName, "Parle-G");
+    assert.equal(seen.url, "/internal/bills/extract");
+    assert.equal(seen.contentType, "image/jpeg");
+    assert.deepEqual(seen.body, PHOTO);
+
+    for (const type of ["image/png", "image/webp"]) {
+      assert.equal((await extract((req) => photo(req, type))).status, 200, type);
+      assert.equal(seen.contentType, type);
+    }
+  });
+
+  test("a photo may be up to 10 MB, a voice note only 5 MB", async () => {
+    const sixMb = Buffer.alloc(6 * 1024 * 1024);
+    const bigPhoto = await extract((req) =>
+      req.attach("image", sixMb, { filename: "bill.jpg", contentType: "image/jpeg" })
+    );
+    assert.equal(bigPhoto.status, 200);
+
+    const bigAudio = await extract((req) =>
+      req.attach("audio", sixMb, { filename: "n.webm", contentType: "audio/webm" })
+    );
+    assert.equal(bigAudio.status, 400);
+    assert.match(bigAudio.body.message, /5 MB/);
+
+    const hugePhoto = await extract((req) =>
+      req.attach("image", Buffer.alloc(10 * 1024 * 1024 + 1), { filename: "b.jpg", contentType: "image/jpeg" })
+    );
+    assert.equal(hugePhoto.status, 400);
+    assert.match(hugePhoto.body.message, /10 MB/);
+  });
+
+  test("exactly one file is required, and each field takes only its own kind", async () => {
+    const both = await extract((req) =>
+      photo(req).attach("audio", AUDIO, { filename: "n.webm", contentType: "audio/webm" })
+    );
+    assert.equal(both.status, 400);
+
+    const audioInImageField = await extract((req) =>
+      req.attach("image", AUDIO, { filename: "n.webm", contentType: "audio/webm" })
+    );
+    assert.equal(audioInImageField.status, 400);
+
+    const pdf = await extract((req) =>
+      req.attach("image", PHOTO, { filename: "bill.pdf", contentType: "application/pdf" })
+    );
+    assert.equal(pdf.status, 400);
+
+    const strangeField = await extract((req) =>
+      req.attach("file", PHOTO, { filename: "bill.jpg", contentType: "image/jpeg" })
+    );
+    assert.equal(strangeField.status, 400);
+
+    assert.equal(seen.url, undefined, "the AI service was never called");
+  });
+
   test("a call without sign-in is refused", async () => {
     env.devUserId = null;
     const response = await request(app)
