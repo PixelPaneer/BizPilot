@@ -19,6 +19,13 @@ class Settings(BaseSettings):
     # How long a service token lives. The contract says 60 seconds at most.
     service_token_ttl_seconds: int = 60
     node_timeout_seconds: float = 10.0
+
+    # Gemini. Each model is its own setting so any can be changed without touching code; the exact
+    # ids must be checked on Google's models page (they change). The text model does everything in
+    # the customer flow: understanding the message and writing the reply.
+    gemini_api_key: str = ""
+    gemini_text_model: str = "gemini-3.5-flash-lite"
+    gemini_timeout_seconds: float = 20.0
     log_level: str = "info"
 
     @field_validator("service_jwt_secret")

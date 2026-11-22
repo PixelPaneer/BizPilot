@@ -6,11 +6,29 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from app.api import health, internal
+from app.agents.customer.graph import build_customer_graph
+from app.api import customer, health, internal
 from app.config import Settings, get_settings
 from app.errors import ApiError
+from app.llm.base import LlmClient, LlmError
+from app.llm.gemini import GeminiClient
 from app.shared.logging import setup_logging
 from app.tools.node_client import NodeClient
+
+
+class _NoModel:
+    """Stands in when GEMINI_API_KEY is not set: every call fails, so the service still answers with
+    its fixed replies instead of refusing to start."""
+
+    async def generate(self, **kwargs):
+        raise LlmError("No language model is configured.")
+
+
+def _make_llm(settings: Settings) -> LlmClient:
+    try:
+        return GeminiClient(settings)
+    except LlmError:
+        return _NoModel()
 
 
 def _error_response(status_code: int, message: str, code: str, errors: list | None = None):
@@ -18,7 +36,7 @@ def _error_response(status_code: int, message: str, code: str, errors: list | No
     return JSONResponse(status_code=status_code, content=body)
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+def create_app(settings: Settings | None = None, llm: LlmClient | None = None) -> FastAPI:
     settings = settings or get_settings()
     setup_logging(settings.log_level)
 
@@ -29,11 +47,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app = FastAPI(title="BizPilot AI service", lifespan=lifespan)
     app.state.node_client = NodeClient(settings)
+    app.state.llm = llm or _make_llm(settings)
+    app.state.customer_graph = build_customer_graph(app.state.llm, app.state.node_client)
     # Tests (and the app itself) can swap the settings through FastAPI's dependency system.
     app.dependency_overrides[get_settings] = lambda: settings
 
     app.include_router(health.router)
     app.include_router(internal.router)
+    app.include_router(customer.router)
 
     @app.exception_handler(ApiError)
     async def handle_api_error(request: Request, error: ApiError):
