@@ -121,39 +121,51 @@ export function isBlankList(lines) {
   return lines.every((line) => !line.productId && !line.quantity && !line.unitPrice)
 }
 
-// Turns the draft read from a voice note or a bill photo (POST /bills/extract) into lines for the
-// editor. Nothing is guessed: a product the server could not match clearly stays empty, with the
-// words it came from and its closest products kept in `hint` so the owner can pick one. A price that
-// was spoken or printed is kept (and marked as the owner's own); otherwise the catalog price is used.
-// A product can appear once per entry, so a second line for the same product is left unmatched.
-export function draftToLines(draft, products, mode, origin) {
+// Turns the draft read from a voice note or a bill photo (POST /bills/extract) into editor lines,
+// sorted by kind: { sale, purchase, unsure }. A note can mix both ("5 Maggi bika, Parle-G 50 aaye"),
+// so every line carries its own kind (`type`, else the note's). A line whose kind nobody could tell goes
+// to `unsure` for the owner to place; nothing is guessed. Within a list:
+// - a product the server could not match clearly stays empty, with the words it came from and its
+//   closest products kept in `hint` so the owner can pick one;
+// - a price that was spoken or printed is kept (and marked as the owner's own), otherwise the catalog
+//   price for that kind is used;
+// - a product can appear once per entry, so a second line for the same product is left unmatched.
+export function splitDraft(draft, products, origin) {
   const byId = new Map(products.map((product) => [product.id, product]))
-  const used = new Set()
+  const buckets = { sale: [], purchase: [], unsure: [] }
+  const used = { sale: new Set(), purchase: new Set(), unsure: new Set() }
+  const kindOf = (type) => (type === 'SALE' ? 'sale' : type === 'PURCHASE' ? 'purchase' : null)
 
-  return draft.lines.map((item) => {
+  for (const item of draft.lines) {
+    const kind = kindOf(item.type) ?? kindOf(draft.type)
+    const bucket = kind ?? 'unsure'
+
     const matched = item.matchedProductId ? byId.get(item.matchedProductId) : undefined
-    const product = matched && !used.has(matched.id) ? matched : undefined
-    if (product) used.add(product.id)
+    const product = matched && !used[bucket].has(matched.id) ? matched : undefined
+    if (product) used[bucket].add(product.id)
 
     const hasPrice = typeof item.price === 'number'
     const candidates = (item.candidates ?? [])
       .filter((candidate) => byId.has(candidate.productId))
       .map((candidate) => ({ productId: candidate.productId, name: byId.get(candidate.productId).name }))
 
-    return {
+    buckets[bucket].push({
       ...emptyLine(),
       productId: product ? product.id : '',
       quantity: item.quantity === null || item.quantity === undefined ? '' : String(item.quantity),
-      unitPrice: hasPrice ? String(item.price) : defaultPrice(product, mode),
+      // The catalog price depends on the kind, so a line of unknown kind has none until it is placed.
+      unitPrice: hasPrice ? String(item.price) : kind ? defaultPrice(product, kind) : '',
       priceTouched: hasPrice,
       hint: { origin, text: item.rawText, unit: item.unit ?? null, candidates },
-    }
-  })
+    })
+  }
+
+  return buckets
 }
 
-// The draft's detected type as an editor mode, or null when the server could not tell.
-export function modeFromDraft(draft) {
-  if (draft.type === 'SALE') return 'sale'
-  if (draft.type === 'PURCHASE') return 'purchase'
-  return null
+// A line the owner places in the Sales or Purchases list: it gets that list's catalog price unless
+// a price was spoken or printed.
+export function placeLine(line, product, mode) {
+  const keepPrice = line.priceTouched && line.unitPrice !== ''
+  return { ...line, unitPrice: keepPrice ? line.unitPrice : defaultPrice(product, mode) }
 }

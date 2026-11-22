@@ -3,13 +3,13 @@ import test from 'node:test'
 import {
   buildPayload,
   defaultPrice,
-  draftToLines,
+  placeLine,
   emptyLine,
   entryTotal,
   isBlankList,
   lineTotal,
-  modeFromDraft,
   oversoldLines,
+  splitDraft,
   validateLines,
 } from './stockEntry.js'
 
@@ -112,6 +112,7 @@ test('the payload uses numbers and only a sale can allow overselling', () => {
 
 const products = [parle, maggi]
 const draftLine = (overrides) => ({
+  type: 'SALE',
   rawText: 'text',
   quantity: 5,
   unit: null,
@@ -122,76 +123,117 @@ const draftLine = (overrides) => ({
   candidates: [],
   ...overrides,
 })
+const draft = (lines, type = null) => ({ type, lines, warnings: [] })
 
-test('a matched draft line fills the product, quantity and the catalog price', () => {
-  const [result] = draftToLines(
-    { lines: [draftLine({ matchedProductId: 'p1', quantity: 50 })] },
+test('a matched draft line fills the product, quantity and the catalog price of its kind', () => {
+  const result = splitDraft(
+    draft([draftLine({ type: 'PURCHASE', matchedProductId: 'p1', quantity: 50 })]),
     products,
-    'purchase',
     'voice',
   )
-  assert.equal(result.productId, 'p1')
-  assert.equal(result.quantity, '50')
-  assert.equal(result.unitPrice, '8') // the buying price in purchase mode
-  assert.equal(result.priceTouched, false)
-  assert.equal(result.hint.origin, 'voice')
+  const [first] = result.purchase
+  assert.equal(first.productId, 'p1')
+  assert.equal(first.quantity, '50')
+  assert.equal(first.unitPrice, '8') // the buying price for a purchase
+  assert.equal(first.priceTouched, false)
+  assert.equal(first.hint.origin, 'voice')
+  assert.equal(result.sale.length + result.unsure.length, 0)
+})
+
+test('one note with sales and purchases fills both lists', () => {
+  const result = splitDraft(
+    draft([
+      draftLine({ type: 'SALE', matchedProductId: 'p2', quantity: 5 }),
+      draftLine({ type: 'PURCHASE', matchedProductId: 'p1', quantity: 50 }),
+    ]),
+    products,
+    'voice',
+  )
+  assert.deepEqual(
+    result.sale.map((line) => [line.productId, line.quantity, line.unitPrice]),
+    [['p2', '5', '14']],
+  )
+  assert.deepEqual(
+    result.purchase.map((line) => [line.productId, line.quantity, line.unitPrice]),
+    [['p1', '50', '8']],
+  )
+  assert.equal(result.unsure.length, 0)
+})
+
+test('a line without its own kind takes the note’s kind, and with neither it waits for the owner', () => {
+  const result = splitDraft(
+    draft([draftLine({ type: null, matchedProductId: 'p1' })], 'PURCHASE'),
+    products,
+    'photo',
+  )
+  assert.equal(result.purchase.length, 1)
+
+  const unsure = splitDraft(draft([draftLine({ type: null, matchedProductId: 'p1' })]), products, 'voice')
+  assert.equal(unsure.unsure.length, 1)
+  assert.equal(unsure.unsure[0].unitPrice, '', 'no catalog price until the owner picks Sale or Purchase')
+  assert.equal(unsure.sale.length + unsure.purchase.length, 0)
 })
 
 test('a spoken or printed price is kept and counts as the owner’s own', () => {
-  const [result] = draftToLines(
-    { lines: [draftLine({ matchedProductId: 'p1', price: 12 })] },
-    products,
-    'sale',
-    'photo',
-  )
-  assert.equal(result.unitPrice, '12')
-  assert.equal(result.priceTouched, true)
+  const result = splitDraft(draft([draftLine({ matchedProductId: 'p1', price: 12 })]), products, 'photo')
+  assert.equal(result.sale[0].unitPrice, '12')
+  assert.equal(result.sale[0].priceTouched, true)
 })
 
 test('an unmatched draft line stays empty and keeps its words and closest products', () => {
-  const [result] = draftToLines(
-    {
-      lines: [
-        draftLine({
-          rawText: 'Parle-G Biscuit',
-          quantity: null,
-          candidates: [
-            { productId: 'p1', name: 'Parle-G', price: 10 },
-            { productId: 'gone', name: 'Deleted product', price: 1 },
-          ],
-        }),
-      ],
-    },
+  const result = splitDraft(
+    draft([
+      draftLine({
+        rawText: 'Parle-G Biscuit',
+        quantity: null,
+        candidates: [
+          { productId: 'p1', name: 'Parle-G', price: 10 },
+          { productId: 'gone', name: 'Deleted product', price: 1 },
+        ],
+      }),
+    ]),
     products,
-    'sale',
     'photo',
   )
-  assert.equal(result.productId, '')
-  assert.equal(result.quantity, '', 'a missing quantity is never made up')
-  assert.equal(result.unitPrice, '')
-  assert.deepEqual(result.hint.candidates, [{ productId: 'p1', name: 'Parle-G' }])
-  assert.equal(result.hint.text, 'Parle-G Biscuit')
+  const [first] = result.sale
+  assert.equal(first.productId, '')
+  assert.equal(first.quantity, '', 'a missing quantity is never made up')
+  assert.equal(first.unitPrice, '')
+  assert.deepEqual(first.hint.candidates, [{ productId: 'p1', name: 'Parle-G' }])
+  assert.equal(first.hint.text, 'Parle-G Biscuit')
 })
 
-test('a product matched twice is used once; the second line is left for the owner', () => {
-  const results = draftToLines(
-    { lines: [draftLine({ matchedProductId: 'p1' }), draftLine({ matchedProductId: 'p1' })] },
+test('a product matched twice in one list is used once; the same product may be in both lists', () => {
+  const twice = splitDraft(
+    draft([draftLine({ matchedProductId: 'p1' }), draftLine({ matchedProductId: 'p1' })]),
     products,
-    'sale',
     'voice',
   )
-  assert.deepEqual(results.map((line) => line.productId), ['p1', ''])
+  assert.deepEqual(twice.sale.map((line) => line.productId), ['p1', ''])
+
+  const both = splitDraft(
+    draft([
+      draftLine({ type: 'SALE', matchedProductId: 'p1' }),
+      draftLine({ type: 'PURCHASE', matchedProductId: 'p1' }),
+    ]),
+    products,
+    'voice',
+  )
+  assert.equal(both.sale[0].productId, 'p1')
+  assert.equal(both.purchase[0].productId, 'p1')
 })
 
 test('a matched product that is not in the owner’s list is ignored', () => {
-  const [result] = draftToLines({ lines: [draftLine({ matchedProductId: 'unknown' })] }, products, 'sale', 'voice')
-  assert.equal(result.productId, '')
+  const result = splitDraft(draft([draftLine({ matchedProductId: 'unknown' })]), products, 'voice')
+  assert.equal(result.sale[0].productId, '')
 })
 
-test('the draft type becomes an editor mode, or nothing when unclear', () => {
-  assert.equal(modeFromDraft({ type: 'SALE' }), 'sale')
-  assert.equal(modeFromDraft({ type: 'PURCHASE' }), 'purchase')
-  assert.equal(modeFromDraft({ type: null }), null)
+test('placing a line of unknown kind gives it that list’s catalog price, unless it has its own', () => {
+  const plain = { ...emptyLine(), productId: 'p1', unitPrice: '', priceTouched: false }
+  assert.equal(placeLine(plain, parle, 'sale').unitPrice, '10')
+  assert.equal(placeLine(plain, parle, 'purchase').unitPrice, '8')
+  const spoken = { ...plain, unitPrice: '12', priceTouched: true }
+  assert.equal(placeLine(spoken, parle, 'purchase').unitPrice, '12')
 })
 
 test('only an untouched list counts as blank', () => {

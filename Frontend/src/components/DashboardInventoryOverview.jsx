@@ -63,19 +63,25 @@ function DashboardInventoryOverview({ stats }) {
           ))}
         </div>
         <div className="stock-bar__labels">
-          {segments.map((segment, index) => (
-            <span
-              key={segment.key}
-              className={`pct pct--${segment.key}`}
-              style={{
-                left: segment.key === 'low'
-                  ? `${centers[index] - segment.pct / 2}%`
-                  : `${centers[index]}%`,
-              }}
-            >
-              {segment.pct}%
-            </span>
-          ))}
+          {/* A segment of 0% has no label: it would sit on top of its neighbour's. */}
+          {segments.map((segment, index) => {
+            if (segment.pct === 0) return null
+            let style = {
+              left: segment.key === 'low'
+                ? `${centers[index] - segment.pct / 2}%`
+                : `${centers[index]}%`,
+            }
+            // Two narrow neighbours (low and out) would overlap, so the low label moves to the left
+            // of the out label, which is pinned to the right edge.
+            if (segment.key === 'low' && outPct > 0 && lowPct < 8 && outPct < 8) {
+              style = { left: 'auto', right: `calc(${outPct}% + 36px)`, transform: 'none' }
+            }
+            return (
+              <span key={segment.key} className={`pct pct--${segment.key}`} style={style}>
+                {segment.pct}%
+              </span>
+            )
+          })}
         </div>
       </div>
     </section>

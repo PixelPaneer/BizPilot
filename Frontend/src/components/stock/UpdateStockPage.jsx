@@ -1,190 +1,55 @@
 import { useState } from 'react'
-import { Check, Plus, Trash2, TriangleAlert } from 'lucide-react'
-import ProductPicker from './ProductPicker'
+import { TriangleAlert } from 'lucide-react'
+import EntrySection from './EntrySection'
 import ReadInputPanel from './ReadInputPanel'
-import { apiRequest } from '../../utils/apiClient'
 import { formatCurrency } from '../../utils/inventoryUtils'
-import {
-  MAX_LINES,
-  MODES,
-  buildPayload,
-  defaultPrice,
-  draftToLines,
-  emptyLine,
-  entryTotal,
-  isBlankList,
-  lineTotal,
-  modeFromDraft,
-  newId,
-  validateLines,
-} from '../../utils/stockEntry'
+import { placeLine, splitDraft } from '../../utils/stockEntry'
+import { useEntrySection } from '../../utils/useEntrySection'
 
-const inputClasses =
-  'w-full rounded-lg border bg-white px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-forest focus:outline-none'
 const cardClasses = 'rounded-2xl border border-line bg-white p-5 shadow-sm sm:p-6'
 const primaryButton =
   'rounded-full bg-forest px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-deep disabled:cursor-not-allowed disabled:opacity-60'
-const secondaryButton =
-  'rounded-full border border-line px-5 py-2 text-sm font-medium text-ink transition-colors hover:bg-cream disabled:cursor-not-allowed disabled:opacity-60'
+const choiceButton =
+  'rounded-full border border-forest px-3 py-1 text-xs font-medium text-forest transition-colors hover:bg-sage-light'
 
-function describeError(error) {
-  if (error?.code === 'NOT_FOUND') {
-    return 'One of these products no longer exists. Refresh the page and try again.'
-  }
-  if (error?.code === 'VALIDATION_ERROR') return 'Please check the quantities and prices.'
-  return error?.message || 'Something went wrong. Please try again.'
-}
+const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`
 
-// Update Stock: build a list of products with quantities and prices, then save it as one sale
-// (stock goes down) or one purchase (stock goes up). Nothing is saved until Confirm.
+// Update Stock: two lists on one page, Sales (stock goes down) on top and Purchases (stock goes up)
+// below it. Type items into either list, or read a voice note or a bill photo: a note that mixes both
+// ("5 Maggi bika, Parle-G 50 aaye") fills both lists at once. Each list has its own total and Confirm,
+// and nothing is saved until Confirm.
 function UpdateStockPage({ products, isLoading, loadError, onRefresh, onNavigate }) {
-  const [mode, setMode] = useState('sale')
-  const [lines, setLines] = useState(() => [emptyLine()])
-  // Sent with the request so a double click or a retry cannot record the same entry twice.
-  // It changes whenever the draft changes, because the server returns the *first* result for a key.
-  const [idempotencyKey, setIdempotencyKey] = useState(newId)
-  const [phase, setPhase] = useState('editing') // 'editing' | 'saving' | 'done'
-  const [showErrors, setShowErrors] = useState(false)
-  const [formError, setFormError] = useState('')
-  const [shortages, setShortages] = useState(null)
-  const [result, setResult] = useState(null) // { kind: 'sale' | 'purchase', data }
-  const [undo, setUndo] = useState(null) // null | { reason, saving, error, voided }
-  // How the list was made, sent with the sale or purchase: typed (MANUAL), spoken (VOICE) or a bill photo (OCR).
-  const [source, setSource] = useState('MANUAL')
+  const sales = useEntrySection({ mode: 'sale', products, onRefresh })
+  const purchases = useEntrySection({ mode: 'purchase', products, onRefresh })
+  // Lines read from a note or bill whose kind (sale or purchase) could not be told. Nothing is guessed:
+  // the owner puts each one in a list.
+  const [unsure, setUnsure] = useState([])
   const [draftWarnings, setDraftWarnings] = useState([])
+  const [draftNote, setDraftNote] = useState('')
 
-  const productsById = new Map(products.map((product) => [product.id, product]))
-  const { errors } = validateLines(lines, productsById)
-  const total = entryTotal(lines)
-  const isSaving = phase === 'saving'
-
-  function changeDraft(updateLines) {
-    setLines(updateLines)
-    setIdempotencyKey(newId())
-    setFormError('')
-    setShortages(null)
-  }
-
-  function changeMode(nextMode) {
-    if (nextMode === mode) return
-    setMode(nextMode)
-    // Prices the owner has not typed themselves follow the new mode.
-    changeDraft((current) =>
-      current.map((line) => {
-        const product = productsById.get(line.productId)
-        if (!product || line.priceTouched) return line
-        return { ...line, unitPrice: defaultPrice(product, nextMode) }
-      }),
-    )
-  }
-
-  function selectProduct(lineId, productId) {
-    const product = productsById.get(productId)
-    changeDraft((current) =>
-      current.map((line) => {
-        if (line.id !== lineId) return line
-        // A price that was typed, spoken or printed on the bill stays when the product is chosen.
-        const keepPrice = line.priceTouched && line.unitPrice !== ''
-        return {
-          ...line,
-          productId,
-          unitPrice: keepPrice ? line.unitPrice : defaultPrice(product, mode),
-          priceTouched: keepPrice,
-        }
-      }),
-    )
-  }
-
-  // A draft read from a voice note or a bill photo. It is added to the list for the owner to check;
-  // nothing is saved until Confirm. If the list is still empty it is replaced, otherwise the new
-  // lines are added after the existing ones.
   function applyDraft(draft, origin) {
-    const detected = modeFromDraft(draft)
-    if (detected) changeMode(detected)
-    const incoming = draftToLines(draft, products, detected ?? mode, origin)
-    if (incoming.length > 0) {
-      setSource(origin === 'voice' ? 'VOICE' : 'OCR')
-      changeDraft((current) =>
-        isBlankList(current) ? incoming : [...current, ...incoming].slice(0, MAX_LINES),
-      )
-    }
+    const found = splitDraft(draft, products, origin)
+    sales.addLines(found.sale, origin)
+    purchases.addLines(found.purchase, origin)
+    setUnsure((current) => [...current, ...found.unsure])
     setDraftWarnings(draft.warnings)
-    setShowErrors(false)
-  }
 
-  function updateField(lineId, field, value) {
-    changeDraft((current) =>
-      current.map((line) =>
-        line.id === lineId
-          ? { ...line, [field]: value, priceTouched: line.priceTouched || field === 'unitPrice' }
-          : line,
-      ),
+    const parts = [
+      found.sale.length > 0 && plural(found.sale.length, 'sale item'),
+      found.purchase.length > 0 && plural(found.purchase.length, 'purchase item'),
+      found.unsure.length > 0 && `${plural(found.unsure.length, 'item')} to place`,
+    ].filter(Boolean)
+    const from = origin === 'voice' ? 'your voice note' : 'your bill'
+    setDraftNote(
+      parts.length > 0 ? `Read ${parts.join(', ')} from ${from}. Check each list before you confirm.` : '',
     )
   }
 
-  function addLine() {
-    if (lines.length >= MAX_LINES) return
-    changeDraft((current) => [...current, emptyLine()])
-  }
-
-  function removeLine(lineId) {
-    changeDraft((current) =>
-      current.length === 1 ? [emptyLine()] : current.filter((line) => line.id !== lineId),
-    )
-  }
-
-  function startAgain() {
-    setLines([emptyLine()])
-    setSource('MANUAL')
-    setDraftWarnings([])
-    setIdempotencyKey(newId())
-    setPhase('editing')
-    setShowErrors(false)
-    setFormError('')
-    setShortages(null)
-    setResult(null)
-    setUndo(null)
-  }
-
-  async function submit(allowOversell = false) {
-    setShowErrors(true)
-    if (!validateLines(lines, productsById).isValid) return
-
-    setPhase('saving')
-    setFormError('')
-    setShortages(null)
-    try {
-      const data = await apiRequest(MODES[mode].path, {
-        method: 'POST',
-        body: buildPayload({ mode, lines, idempotencyKey, allowOversell, source }),
-      })
-      setResult({ kind: mode, data })
-      setPhase('done')
-      onRefresh().catch((error) => console.error('Unable to refresh products.', error))
-    } catch (error) {
-      setPhase('editing')
-      if (error.code === 'INSUFFICIENT_STOCK') setShortages(error.errors)
-      else setFormError(describeError(error))
-    }
-  }
-
-  async function voidSale() {
-    const reason = undo.reason.trim()
-    if (reason.length < 3 || reason.length > 200) {
-      setUndo({ ...undo, error: 'Give a reason of 3 to 200 characters.' })
-      return
-    }
-    setUndo({ ...undo, saving: true, error: '' })
-    try {
-      const data = await apiRequest(`/sales/${result.data.saleId}/void`, {
-        method: 'POST',
-        body: { reason },
-      })
-      setUndo({ ...undo, saving: false, error: '', voided: data })
-      onRefresh().catch((error) => console.error('Unable to refresh products.', error))
-    } catch (error) {
-      setUndo({ ...undo, saving: false, error: describeError(error) })
-    }
+  function place(line, mode) {
+    const section = mode === 'sale' ? sales : purchases
+    const product = products.find((candidate) => candidate.id === line.productId)
+    section.addLines([placeLine(line, product, mode)], line.hint?.origin ?? 'voice')
+    setUnsure((current) => current.filter((item) => item.id !== line.id))
   }
 
   if (isLoading) {
@@ -211,348 +76,80 @@ function UpdateStockPage({ products, isLoading, loadError, onRefresh, onNavigate
     )
   }
 
-  // ------------------------------------------------------------------ result screen
-  if (phase === 'done' && result) {
-    const { kind, data } = result
-    const isSale = kind === 'sale'
-    const voided = undo?.voided
+  return (
+    <div className="space-y-5">
+      <section aria-label="Add items" className={cardClasses}>
+        <ReadInputPanel
+          disabled={sales.phase === 'saving' || purchases.phase === 'saving'}
+          onDraft={applyDraft}
+        />
 
-    return (
-      <section aria-label="Entry saved" className={cardClasses}>
-        <div className="flex items-start gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sage-light text-deep">
-            <Check size={20} aria-hidden="true" />
-          </span>
-          <div>
-            <h2 className="text-xl font-semibold text-ink">
-              {voided ? 'Sale undone' : isSale ? 'Sale recorded' : 'Purchase recorded'}
-            </h2>
-            <p className="mt-1 text-sm text-muted">
-              {isSale && <span className="font-medium text-ink">{data.saleNumber}</span>}
-              {isSale && ' · '}
-              Total {formatCurrency(data.totalAmount)}
-              {voided && ' · The stock has been put back.'}
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-5 overflow-x-auto">
-          <table className="w-full min-w-[480px] text-left text-sm">
-            <thead>
-              <tr className="border-b border-line text-xs uppercase tracking-wide text-muted">
-                <th className="py-2 pr-3 font-medium">Product</th>
-                <th className="py-2 pr-3 font-medium">Quantity</th>
-                <th className="py-2 pr-3 font-medium">Price</th>
-                <th className="py-2 font-medium">{voided ? 'Stock restored' : 'New stock'}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.lines.map((line) => (
-                <tr key={line.productId} className="border-b border-line last:border-0">
-                  <td className="py-2 pr-3 font-medium text-ink">{line.productName}</td>
-                  <td className="py-2 pr-3">{line.quantity}</td>
-                  <td className="py-2 pr-3">{formatCurrency(line.unitPrice)}</td>
-                  <td className="py-2">
-                    {voided ? 'Yes' : line.newQuantity}
-                    {line.shortfall > 0 && (
-                      <span className="ml-2 text-xs text-warn-text">
-                        ({line.shortfall} more than the stock on record)
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {[...data.warnings, ...(voided?.warnings ?? [])].map((warning) => (
-          <p key={warning} className="mt-3 flex items-start gap-2 text-sm text-warn-text">
-            <TriangleAlert size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
-            {warning}
+        {draftNote && (
+          <p role="status" className="mt-4 text-sm font-medium text-ink">
+            {draftNote}
           </p>
-        ))}
+        )}
 
-        {undo && !voided && (
-          <div className="mt-5 rounded-xl border border-line bg-cream p-4">
-            <label htmlFor="undo-reason" className="block text-sm font-medium text-ink">
-              Why are you undoing this sale?
-            </label>
-            <input
-              id="undo-reason"
-              type="text"
-              maxLength={200}
-              value={undo.reason}
-              onChange={(event) => setUndo({ ...undo, reason: event.target.value, error: '' })}
-              className={`${inputClasses} mt-2 border-line`}
-            />
-            {undo.error && (
-              <p role="alert" className="mt-2 text-sm text-danger-text">
-                {undo.error}
-              </p>
-            )}
-            <div className="mt-3 flex gap-2">
-              <button type="button" onClick={voidSale} disabled={undo.saving} className={primaryButton}>
-                {undo.saving ? 'Undoing...' : 'Undo sale'}
-              </button>
-              <button type="button" onClick={() => setUndo(null)} disabled={undo.saving} className={secondaryButton}>
-                Keep sale
-              </button>
-            </div>
+        {unsure.length > 0 && (
+          <div className="mt-4 rounded-xl border border-warn-bar bg-warn-bg p-4 text-sm text-warn-text">
+            <p className="flex items-center gap-2 font-semibold">
+              <TriangleAlert size={16} aria-hidden="true" />
+              Is this a sale or a purchase?
+            </p>
+            <p className="mt-1">
+              These items did not say whether stock came in or went out. Choose where each one belongs.
+            </p>
+            <ul className="mt-3 space-y-2">
+              {unsure.map((line) => {
+                const product = products.find((candidate) => candidate.id === line.productId)
+                return (
+                  <li
+                    key={line.id}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white/70 px-3 py-2"
+                  >
+                    <span className="text-ink">
+                      <span className="font-medium">{product ? product.name : 'Unknown product'}</span>
+                      {line.quantity !== '' && ` × ${line.quantity}`}
+                      {line.unitPrice !== '' && ` at ${formatCurrency(Number(line.unitPrice))}`}
+                      {line.hint?.text && (
+                        <span className="ml-2 text-xs text-muted">
+                          {line.hint.origin === 'voice' ? 'Heard' : 'Read'}: “{line.hint.text}”
+                        </span>
+                      )}
+                    </span>
+                    <span className="flex gap-2">
+                      <button type="button" onClick={() => place(line, 'sale')} className={choiceButton}>
+                        Sale
+                      </button>
+                      <button type="button" onClick={() => place(line, 'purchase')} className={choiceButton}>
+                        Purchase
+                      </button>
+                    </span>
+                  </li>
+                )
+              })}
+            </ul>
           </div>
         )}
 
-        <div className="mt-6 flex flex-wrap gap-2">
-          <button type="button" onClick={startAgain} className={primaryButton}>
-            Record another
-          </button>
-          <button type="button" onClick={() => onNavigate('inventory')} className={secondaryButton}>
-            Back to inventory
-          </button>
-          {isSale && !undo && !voided && (
-            <button
-              type="button"
-              onClick={() => setUndo({ reason: 'Entered by mistake', saving: false, error: '', voided: null })}
-              className={secondaryButton}
-            >
-              Undo this sale
-            </button>
-          )}
-        </div>
-        {!isSale && (
-          <p className="mt-3 text-xs text-muted">
-            A purchase cannot be undone here. If it was a mistake, correct the stock from the
-            Inventory page.
-          </p>
+        {draftWarnings.length > 0 && (
+          <div role="status" className="mt-4 rounded-xl border border-warn-bar bg-warn-bg p-4 text-sm text-warn-text">
+            <p className="flex items-center gap-2 font-semibold">
+              <TriangleAlert size={16} aria-hidden="true" />
+              Check every line before you confirm
+            </p>
+            <ul className="mt-2 list-disc space-y-1 pl-5">
+              {draftWarnings.map((warning, index) => (
+                <li key={`${index}-${warning}`}>{warning}</li>
+              ))}
+            </ul>
+          </div>
         )}
       </section>
-    )
-  }
 
-  // ------------------------------------------------------------------ editor
-  const usedIds = lines.map((line) => line.productId).filter(Boolean)
-  const labelClasses = 'mb-1 block text-xs font-medium text-muted md:sr-only'
-
-  return (
-    <section aria-label="Update stock" className={cardClasses}>
-      <ReadInputPanel disabled={isSaving} onDraft={applyDraft} />
-
-      <div role="group" aria-label="Type of entry" className="mt-5 flex gap-2 rounded-xl border border-line p-1 sm:inline-flex">
-        {Object.entries(MODES).map(([key, option]) => (
-          <button
-            key={key}
-            type="button"
-            aria-pressed={mode === key}
-            onClick={() => changeMode(key)}
-            disabled={isSaving}
-            className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors sm:flex-none ${
-              mode === key ? 'bg-forest text-white' : 'text-muted hover:bg-sage-light'
-            }`}
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
-      <p className="mt-3 text-sm text-muted">
-        {mode === 'sale'
-          ? 'Record what you sold. Stock goes down, and the sale shows in your reports. Prices start from your catalog; change them if the customer paid something different.'
-          : 'Record stock you received from a supplier. Stock goes up, and the price you enter becomes the product’s buying price.'}
-      </p>
-
-      {draftWarnings.length > 0 && (
-        <div role="status" className="mt-5 rounded-xl border border-warn-bar bg-warn-bg p-4 text-sm text-warn-text">
-          <p className="flex items-center gap-2 font-semibold">
-            <TriangleAlert size={16} aria-hidden="true" />
-            Check every line before you confirm
-          </p>
-          <ul className="mt-2 list-disc space-y-1 pl-5">
-            {draftWarnings.map((warning) => (
-              <li key={warning}>{warning}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      <div className="mt-5 hidden grid-cols-[minmax(0,2fr)_110px_130px_110px_40px] gap-3 text-xs font-medium uppercase tracking-wide text-muted md:grid">
-        <span>Product</span>
-        <span>Quantity</span>
-        <span>{MODES[mode].priceLabel}</span>
-        <span className="text-right">Amount</span>
-        <span />
-      </div>
-
-      <div className="mt-2 space-y-4 md:space-y-3">
-        {lines.map((line, index) => {
-          const product = productsById.get(line.productId)
-          const lineError = showErrors ? errors[line.id] : undefined
-          const quantity = Number(line.quantity)
-          const tooMany = mode === 'sale' && product && quantity > product.quantity
-
-          return (
-            <div
-              key={line.id}
-              className="grid gap-3 rounded-xl border border-line p-3 md:grid-cols-[minmax(0,2fr)_110px_130px_110px_40px] md:items-start md:border-0 md:p-0"
-            >
-              <div>
-                <label htmlFor={`product-${line.id}`} className={labelClasses}>
-                  Product
-                </label>
-                <ProductPicker
-                  id={`product-${line.id}`}
-                  label={`Product, item ${index + 1}`}
-                  products={products}
-                  selectedId={line.productId}
-                  excludeIds={usedIds.filter((id) => id !== line.productId)}
-                  onSelect={(productId) => selectProduct(line.id, productId)}
-                  hasError={Boolean(lineError?.product)}
-                />
-                {lineError?.product && <p className="mt-1 text-xs text-danger-text">{lineError.product}</p>}
-                {line.hint?.text && (
-                  <p className="mt-1 text-xs text-muted">
-                    {line.hint.origin === 'voice' ? 'Heard' : 'Read'}: “{line.hint.text}”
-                  </p>
-                )}
-                {!product && line.hint?.candidates?.some((candidate) => !usedIds.includes(candidate.productId)) && (
-                  <p className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted">
-                    Did you mean
-                    {line.hint.candidates
-                      .filter((candidate) => !usedIds.includes(candidate.productId))
-                      .map((candidate) => (
-                        <button
-                          key={candidate.productId}
-                          type="button"
-                          onClick={() => selectProduct(line.id, candidate.productId)}
-                          className="rounded-full border border-forest px-2 py-0.5 font-medium text-forest hover:bg-sage-light"
-                        >
-                          {candidate.name}
-                        </button>
-                      ))}
-                  </p>
-                )}
-                {product && line.hint?.unit && line.hint.unit !== product.unit && (
-                  <p className="mt-1 text-xs text-warn-text">
-                    {line.hint.origin === 'voice' ? 'You said' : 'The bill says'} {line.hint.unit}, but this
-                    product is counted in {product.unit}. Check the quantity.
-                  </p>
-                )}
-                {product && (
-                  <p className={`mt-1 text-xs ${tooMany ? 'text-warn-text' : 'text-muted'}`}>
-                    {product.quantity} {product.unit} in stock
-                    {tooMany && ' — more than you have on record'}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label htmlFor={`quantity-${line.id}`} className={labelClasses}>
-                  Quantity
-                </label>
-                <input
-                  id={`quantity-${line.id}`}
-                  type="number"
-                  inputMode="decimal"
-                  min="0"
-                  step="any"
-                  value={line.quantity}
-                  onChange={(event) => updateField(line.id, 'quantity', event.target.value)}
-                  placeholder="e.g. 5"
-                  aria-invalid={Boolean(lineError?.quantity)}
-                  className={`${inputClasses} ${lineError?.quantity ? 'border-danger-text' : 'border-line'}`}
-                />
-                {lineError?.quantity && <p className="mt-1 text-xs text-danger-text">{lineError.quantity}</p>}
-              </div>
-
-              <div>
-                <label htmlFor={`price-${line.id}`} className={labelClasses}>
-                  {MODES[mode].priceLabel}
-                </label>
-                <input
-                  id={`price-${line.id}`}
-                  type="number"
-                  inputMode="decimal"
-                  min="0"
-                  step="0.01"
-                  value={line.unitPrice}
-                  onChange={(event) => updateField(line.id, 'unitPrice', event.target.value)}
-                  placeholder="e.g. 10"
-                  aria-invalid={Boolean(lineError?.unitPrice)}
-                  className={`${inputClasses} ${lineError?.unitPrice ? 'border-danger-text' : 'border-line'}`}
-                />
-                {lineError?.unitPrice && <p className="mt-1 text-xs text-danger-text">{lineError.unitPrice}</p>}
-              </div>
-
-              <p className="text-sm font-medium text-ink md:pt-2 md:text-right">
-                <span className="mr-2 text-xs font-medium text-muted md:hidden">Amount</span>
-                {formatCurrency(lineTotal(line.quantity, line.unitPrice))}
-              </p>
-
-              <button
-                type="button"
-                onClick={() => removeLine(line.id)}
-                disabled={isSaving}
-                aria-label={`Remove item ${index + 1}`}
-                className="flex h-9 w-9 items-center justify-center justify-self-end rounded-full text-muted hover:bg-danger-bg hover:text-danger-text md:mt-0.5"
-              >
-                <Trash2 size={16} aria-hidden="true" />
-              </button>
-            </div>
-          )
-        })}
-      </div>
-
-      <button
-        type="button"
-        onClick={addLine}
-        disabled={isSaving || lines.length >= MAX_LINES}
-        className="mt-4 flex items-center gap-2 rounded-full border border-dashed border-sage px-4 py-2 text-sm font-medium text-forest hover:bg-sage-light disabled:opacity-60"
-      >
-        <Plus size={16} aria-hidden="true" />
-        Add another item
-      </button>
-
-      {shortages && (
-        <div role="alert" className="mt-5 rounded-xl border border-warn-bar bg-warn-bg p-4 text-sm text-warn-text">
-          <p className="flex items-center gap-2 font-semibold">
-            <TriangleAlert size={16} aria-hidden="true" />
-            Not enough stock on record
-          </p>
-          <ul className="mt-2 list-disc space-y-1 pl-5">
-            {shortages.map((shortage) => (
-              <li key={shortage.productId}>
-                {shortage.productName}: you entered {shortage.requested}, but only {shortage.available} in stock.
-              </li>
-            ))}
-          </ul>
-          <p className="mt-2">
-            If your records are behind, you can record the sale anyway. Stock for these items
-            will be set to 0, and you will be reminded to check it.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button type="button" onClick={() => submit(true)} disabled={isSaving} className={primaryButton}>
-              Record anyway
-            </button>
-            <button type="button" onClick={() => setShortages(null)} disabled={isSaving} className={secondaryButton}>
-              Go back and edit
-            </button>
-          </div>
-        </div>
-      )}
-
-      {formError && (
-        <p role="alert" className="mt-5 text-sm text-danger-text">
-          {formError}
-        </p>
-      )}
-
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5">
-        <p className="text-sm text-muted">
-          Total <span className="ml-1 text-xl font-semibold text-ink">{formatCurrency(total)}</span>
-        </p>
-        <button type="button" onClick={() => submit(false)} disabled={isSaving} className={primaryButton}>
-          {isSaving ? 'Saving...' : mode === 'sale' ? 'Confirm sale' : 'Confirm purchase'}
-        </button>
-      </div>
-    </section>
+      <EntrySection section={sales} products={products} onNavigate={onNavigate} />
+      <EntrySection section={purchases} products={products} onNavigate={onNavigate} />
+    </div>
   )
 }
 
