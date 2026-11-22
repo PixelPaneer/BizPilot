@@ -100,11 +100,12 @@ export function oversoldLines(lines, productsById) {
   })
 }
 
-// The request body for POST /sales or POST /purchases.
-export function buildPayload({ mode, lines, idempotencyKey, allowOversell = false }) {
+// The request body for POST /sales or POST /purchases. `source` says how the list was made:
+// typed by hand (MANUAL), read from a voice note (VOICE) or from a bill photo (OCR).
+export function buildPayload({ mode, lines, idempotencyKey, allowOversell = false, source = 'MANUAL' }) {
   const payload = {
     idempotencyKey,
-    source: 'MANUAL',
+    source,
     lines: lines.map((line) => ({
       productId: line.productId,
       quantity: toNumber(line.quantity),
@@ -113,4 +114,46 @@ export function buildPayload({ mode, lines, idempotencyKey, allowOversell = fals
   }
   if (mode === 'sale' && allowOversell) payload.allowOversell = true
   return payload
+}
+
+// True while the list is still the single empty line it starts with.
+export function isBlankList(lines) {
+  return lines.every((line) => !line.productId && !line.quantity && !line.unitPrice)
+}
+
+// Turns the draft read from a voice note or a bill photo (POST /bills/extract) into lines for the
+// editor. Nothing is guessed: a product the server could not match clearly stays empty, with the
+// words it came from and its closest products kept in `hint` so the owner can pick one. A price that
+// was spoken or printed is kept (and marked as the owner's own); otherwise the catalog price is used.
+// A product can appear once per entry, so a second line for the same product is left unmatched.
+export function draftToLines(draft, products, mode, origin) {
+  const byId = new Map(products.map((product) => [product.id, product]))
+  const used = new Set()
+
+  return draft.lines.map((item) => {
+    const matched = item.matchedProductId ? byId.get(item.matchedProductId) : undefined
+    const product = matched && !used.has(matched.id) ? matched : undefined
+    if (product) used.add(product.id)
+
+    const hasPrice = typeof item.price === 'number'
+    const candidates = (item.candidates ?? [])
+      .filter((candidate) => byId.has(candidate.productId))
+      .map((candidate) => ({ productId: candidate.productId, name: byId.get(candidate.productId).name }))
+
+    return {
+      ...emptyLine(),
+      productId: product ? product.id : '',
+      quantity: item.quantity === null || item.quantity === undefined ? '' : String(item.quantity),
+      unitPrice: hasPrice ? String(item.price) : defaultPrice(product, mode),
+      priceTouched: hasPrice,
+      hint: { origin, text: item.rawText, unit: item.unit ?? null, candidates },
+    }
+  })
+}
+
+// The draft's detected type as an editor mode, or null when the server could not tell.
+export function modeFromDraft(draft) {
+  if (draft.type === 'SALE') return 'sale'
+  if (draft.type === 'PURCHASE') return 'purchase'
+  return null
 }

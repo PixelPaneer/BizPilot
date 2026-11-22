@@ -3,9 +3,12 @@ import test from 'node:test'
 import {
   buildPayload,
   defaultPrice,
+  draftToLines,
   emptyLine,
   entryTotal,
+  isBlankList,
   lineTotal,
+  modeFromDraft,
   oversoldLines,
   validateLines,
 } from './stockEntry.js'
@@ -105,4 +108,101 @@ test('the payload uses numbers and only a sale can allow overselling', () => {
     ),
     false,
   )
+})
+
+const products = [parle, maggi]
+const draftLine = (overrides) => ({
+  rawText: 'text',
+  quantity: 5,
+  unit: null,
+  price: null,
+  matchedProductId: null,
+  matchedProductName: null,
+  confidence: 0,
+  candidates: [],
+  ...overrides,
+})
+
+test('a matched draft line fills the product, quantity and the catalog price', () => {
+  const [result] = draftToLines(
+    { lines: [draftLine({ matchedProductId: 'p1', quantity: 50 })] },
+    products,
+    'purchase',
+    'voice',
+  )
+  assert.equal(result.productId, 'p1')
+  assert.equal(result.quantity, '50')
+  assert.equal(result.unitPrice, '8') // the buying price in purchase mode
+  assert.equal(result.priceTouched, false)
+  assert.equal(result.hint.origin, 'voice')
+})
+
+test('a spoken or printed price is kept and counts as the owner’s own', () => {
+  const [result] = draftToLines(
+    { lines: [draftLine({ matchedProductId: 'p1', price: 12 })] },
+    products,
+    'sale',
+    'photo',
+  )
+  assert.equal(result.unitPrice, '12')
+  assert.equal(result.priceTouched, true)
+})
+
+test('an unmatched draft line stays empty and keeps its words and closest products', () => {
+  const [result] = draftToLines(
+    {
+      lines: [
+        draftLine({
+          rawText: 'Parle-G Biscuit',
+          quantity: null,
+          candidates: [
+            { productId: 'p1', name: 'Parle-G', price: 10 },
+            { productId: 'gone', name: 'Deleted product', price: 1 },
+          ],
+        }),
+      ],
+    },
+    products,
+    'sale',
+    'photo',
+  )
+  assert.equal(result.productId, '')
+  assert.equal(result.quantity, '', 'a missing quantity is never made up')
+  assert.equal(result.unitPrice, '')
+  assert.deepEqual(result.hint.candidates, [{ productId: 'p1', name: 'Parle-G' }])
+  assert.equal(result.hint.text, 'Parle-G Biscuit')
+})
+
+test('a product matched twice is used once; the second line is left for the owner', () => {
+  const results = draftToLines(
+    { lines: [draftLine({ matchedProductId: 'p1' }), draftLine({ matchedProductId: 'p1' })] },
+    products,
+    'sale',
+    'voice',
+  )
+  assert.deepEqual(results.map((line) => line.productId), ['p1', ''])
+})
+
+test('a matched product that is not in the owner’s list is ignored', () => {
+  const [result] = draftToLines({ lines: [draftLine({ matchedProductId: 'unknown' })] }, products, 'sale', 'voice')
+  assert.equal(result.productId, '')
+})
+
+test('the draft type becomes an editor mode, or nothing when unclear', () => {
+  assert.equal(modeFromDraft({ type: 'SALE' }), 'sale')
+  assert.equal(modeFromDraft({ type: 'PURCHASE' }), 'purchase')
+  assert.equal(modeFromDraft({ type: null }), null)
+})
+
+test('only an untouched list counts as blank', () => {
+  assert.equal(isBlankList([emptyLine()]), true)
+  assert.equal(isBlankList([line('p1', '', '')]), false)
+  assert.equal(isBlankList([emptyLine(), line('', '3', '')]), false)
+})
+
+test('the source says how the list was made', () => {
+  const lines = [line('p1', '2', '10')]
+  assert.equal(buildPayload({ mode: 'sale', lines, idempotencyKey: 'k' }).source, 'MANUAL')
+  assert.equal(buildPayload({ mode: 'sale', lines, idempotencyKey: 'k', source: 'VOICE' }).source, 'VOICE')
+  assert.equal(buildPayload({ mode: 'purchase', lines, idempotencyKey: 'k', source: 'OCR' }).source, 'OCR')
 })

@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "test": "node --test src/utils/stockEntry.test.js",
+    "test": "node --test src/utils/stockEntry.test.js src/utils/mediaCapture.test.js",
     "preview": "vite preview"
   },
   "dependencies": {

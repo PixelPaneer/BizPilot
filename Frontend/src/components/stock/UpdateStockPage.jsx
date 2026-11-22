@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Camera, Check, Keyboard, Mic, Plus, Trash2, TriangleAlert } from 'lucide-react'
+import { Check, Plus, Trash2, TriangleAlert } from 'lucide-react'
 import ProductPicker from './ProductPicker'
+import ReadInputPanel from './ReadInputPanel'
 import { apiRequest } from '../../utils/apiClient'
 import { formatCurrency } from '../../utils/inventoryUtils'
 import {
@@ -8,9 +9,12 @@ import {
   MODES,
   buildPayload,
   defaultPrice,
+  draftToLines,
   emptyLine,
   entryTotal,
+  isBlankList,
   lineTotal,
+  modeFromDraft,
   newId,
   validateLines,
 } from '../../utils/stockEntry'
@@ -22,14 +26,6 @@ const primaryButton =
   'rounded-full bg-forest px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-deep disabled:cursor-not-allowed disabled:opacity-60'
 const secondaryButton =
   'rounded-full border border-line px-5 py-2 text-sm font-medium text-ink transition-colors hover:bg-cream disabled:cursor-not-allowed disabled:opacity-60'
-
-// The ways to fill in the list. Only typing the items works for now; scanning a bill and
-// speaking are placeholders until they are built.
-const INPUT_METHODS = [
-  { key: 'manual', label: 'Type items', hint: 'Add products one by one', icon: Keyboard, available: true },
-  { key: 'photo', label: 'Scan a bill', hint: 'Take or upload a photo', icon: Camera, available: false },
-  { key: 'voice', label: 'Speak', hint: 'Say what you sold or received', icon: Mic, available: false },
-]
 
 function describeError(error) {
   if (error?.code === 'NOT_FOUND') {
@@ -53,6 +49,9 @@ function UpdateStockPage({ products, isLoading, loadError, onRefresh, onNavigate
   const [shortages, setShortages] = useState(null)
   const [result, setResult] = useState(null) // { kind: 'sale' | 'purchase', data }
   const [undo, setUndo] = useState(null) // null | { reason, saving, error, voided }
+  // How the list was made, sent with the sale or purchase: typed (MANUAL), spoken (VOICE) or a bill photo (OCR).
+  const [source, setSource] = useState('MANUAL')
+  const [draftWarnings, setDraftWarnings] = useState([])
 
   const productsById = new Map(products.map((product) => [product.id, product]))
   const { errors } = validateLines(lines, productsById)
@@ -82,12 +81,35 @@ function UpdateStockPage({ products, isLoading, loadError, onRefresh, onNavigate
   function selectProduct(lineId, productId) {
     const product = productsById.get(productId)
     changeDraft((current) =>
-      current.map((line) =>
-        line.id === lineId
-          ? { ...line, productId, unitPrice: defaultPrice(product, mode), priceTouched: false }
-          : line,
-      ),
+      current.map((line) => {
+        if (line.id !== lineId) return line
+        // A price that was typed, spoken or printed on the bill stays when the product is chosen.
+        const keepPrice = line.priceTouched && line.unitPrice !== ''
+        return {
+          ...line,
+          productId,
+          unitPrice: keepPrice ? line.unitPrice : defaultPrice(product, mode),
+          priceTouched: keepPrice,
+        }
+      }),
     )
+  }
+
+  // A draft read from a voice note or a bill photo. It is added to the list for the owner to check;
+  // nothing is saved until Confirm. If the list is still empty it is replaced, otherwise the new
+  // lines are added after the existing ones.
+  function applyDraft(draft, origin) {
+    const detected = modeFromDraft(draft)
+    if (detected) changeMode(detected)
+    const incoming = draftToLines(draft, products, detected ?? mode, origin)
+    if (incoming.length > 0) {
+      setSource(origin === 'voice' ? 'VOICE' : 'OCR')
+      changeDraft((current) =>
+        isBlankList(current) ? incoming : [...current, ...incoming].slice(0, MAX_LINES),
+      )
+    }
+    setDraftWarnings(draft.warnings)
+    setShowErrors(false)
   }
 
   function updateField(lineId, field, value) {
@@ -113,6 +135,8 @@ function UpdateStockPage({ products, isLoading, loadError, onRefresh, onNavigate
 
   function startAgain() {
     setLines([emptyLine()])
+    setSource('MANUAL')
+    setDraftWarnings([])
     setIdempotencyKey(newId())
     setPhase('editing')
     setShowErrors(false)
@@ -132,7 +156,7 @@ function UpdateStockPage({ products, isLoading, loadError, onRefresh, onNavigate
     try {
       const data = await apiRequest(MODES[mode].path, {
         method: 'POST',
-        body: buildPayload({ mode, lines, idempotencyKey, allowOversell }),
+        body: buildPayload({ mode, lines, idempotencyKey, allowOversell, source }),
       })
       setResult({ kind: mode, data })
       setPhase('done')
@@ -311,33 +335,7 @@ function UpdateStockPage({ products, isLoading, loadError, onRefresh, onNavigate
 
   return (
     <section aria-label="Update stock" className={cardClasses}>
-      <div role="group" aria-label="How to add items" className="grid gap-2 sm:grid-cols-3">
-        {INPUT_METHODS.map(({ key, label, hint, icon: Icon, available }) => (
-          <button
-            key={key}
-            type="button"
-            disabled={!available}
-            aria-pressed={available ? true : undefined}
-            title={available ? undefined : 'Coming soon'}
-            className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors ${
-              available
-                ? 'border-forest bg-sage-light text-deep'
-                : 'cursor-not-allowed border-line bg-cream text-muted opacity-75'
-            }`}
-          >
-            <Icon size={20} className="shrink-0" aria-hidden="true" />
-            <span className="min-w-0">
-              <span className="block text-sm font-medium">{label}</span>
-              <span className="block text-xs text-muted">{hint}</span>
-              {!available && (
-                <span className="mt-1.5 inline-block rounded-full bg-sage-light px-2 py-0.5 text-[11px] font-medium text-forest">
-                  Coming soon
-                </span>
-              )}
-            </span>
-          </button>
-        ))}
-      </div>
+      <ReadInputPanel disabled={isSaving} onDraft={applyDraft} />
 
       <div role="group" aria-label="Type of entry" className="mt-5 flex gap-2 rounded-xl border border-line p-1 sm:inline-flex">
         {Object.entries(MODES).map(([key, option]) => (
@@ -360,6 +358,20 @@ function UpdateStockPage({ products, isLoading, loadError, onRefresh, onNavigate
           ? 'Record what you sold. Stock goes down, and the sale shows in your reports. Prices start from your catalog; change them if the customer paid something different.'
           : 'Record stock you received from a supplier. Stock goes up, and the price you enter becomes the product’s buying price.'}
       </p>
+
+      {draftWarnings.length > 0 && (
+        <div role="status" className="mt-5 rounded-xl border border-warn-bar bg-warn-bg p-4 text-sm text-warn-text">
+          <p className="flex items-center gap-2 font-semibold">
+            <TriangleAlert size={16} aria-hidden="true" />
+            Check every line before you confirm
+          </p>
+          <ul className="mt-2 list-disc space-y-1 pl-5">
+            {draftWarnings.map((warning) => (
+              <li key={warning}>{warning}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="mt-5 hidden grid-cols-[minmax(0,2fr)_110px_130px_110px_40px] gap-3 text-xs font-medium uppercase tracking-wide text-muted md:grid">
         <span>Product</span>
@@ -395,6 +407,34 @@ function UpdateStockPage({ products, isLoading, loadError, onRefresh, onNavigate
                   hasError={Boolean(lineError?.product)}
                 />
                 {lineError?.product && <p className="mt-1 text-xs text-danger-text">{lineError.product}</p>}
+                {line.hint?.text && (
+                  <p className="mt-1 text-xs text-muted">
+                    {line.hint.origin === 'voice' ? 'Heard' : 'Read'}: “{line.hint.text}”
+                  </p>
+                )}
+                {!product && line.hint?.candidates?.some((candidate) => !usedIds.includes(candidate.productId)) && (
+                  <p className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted">
+                    Did you mean
+                    {line.hint.candidates
+                      .filter((candidate) => !usedIds.includes(candidate.productId))
+                      .map((candidate) => (
+                        <button
+                          key={candidate.productId}
+                          type="button"
+                          onClick={() => selectProduct(line.id, candidate.productId)}
+                          className="rounded-full border border-forest px-2 py-0.5 font-medium text-forest hover:bg-sage-light"
+                        >
+                          {candidate.name}
+                        </button>
+                      ))}
+                  </p>
+                )}
+                {product && line.hint?.unit && line.hint.unit !== product.unit && (
+                  <p className="mt-1 text-xs text-warn-text">
+                    {line.hint.origin === 'voice' ? 'You said' : 'The bill says'} {line.hint.unit}, but this
+                    product is counted in {product.unit}. Check the quantity.
+                  </p>
+                )}
                 {product && (
                   <p className={`mt-1 text-xs ${tooMany ? 'text-warn-text' : 'text-muted'}`}>
                     {product.quantity} {product.unit} in stock
