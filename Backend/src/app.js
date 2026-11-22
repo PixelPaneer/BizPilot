@@ -8,6 +8,7 @@ import productRoutes from "./routes/product.routes.js";
 import inventoryRoutes from "./routes/inventory.routes.js";
 import saleRoutes from "./routes/sale.routes.js";
 import purchaseRoutes from "./routes/purchase.routes.js";
+import billRoutes from "./routes/bill.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
 import profileRoutes from "./routes/profile.routes.js";
 import settingsRoutes from "./routes/settings.routes.js";
@@ -62,6 +63,12 @@ app.use(
   authenticate,
   requireBusinessContext,
   purchaseRoutes
+);
+app.use(
+  "/api/v1/bills",
+  authenticate,
+  requireBusinessContext,
+  billRoutes
 );
 app.use(
   "/api/v1/dashboard",

@@ -7,18 +7,24 @@ const DEFAULT_TIMEOUT_MS = 15000;
 // The only way this backend calls the Python AI service. Each call carries a fresh service token
 // naming the shop. A service that is down, slow or answering nonsense becomes one error the owner
 // can be told about: 502 AI_UNAVAILABLE.
-export async function callAi(businessId, path, { method = "GET", body, timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
+// `body` is sent as JSON. `rawBody` (a Buffer, with its `contentType`) is sent as it is, for files.
+export async function callAi(
+  businessId,
+  path,
+  { method = "GET", body, rawBody, contentType, timeoutMs = DEFAULT_TIMEOUT_MS } = {}
+) {
   const token = signAiToken(businessId);
 
   const headers = { Authorization: `Bearer ${token}` };
-  if (body !== undefined) headers["Content-Type"] = "application/json";
+  if (rawBody !== undefined) headers["Content-Type"] = contentType;
+  else if (body !== undefined) headers["Content-Type"] = "application/json";
 
   let response;
   try {
     response = await fetch(`${env.aiServiceUrl}${path}`, {
       method,
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: rawBody !== undefined ? rawBody : body === undefined ? undefined : JSON.stringify(body),
       signal: AbortSignal.timeout(timeoutMs),
     });
   } catch {
