@@ -249,8 +249,8 @@ if (!process.env.TEST_DATABASE_URL) {
       ]
     );
     assert.match(items[0].detail, /^SL-\d{8}-0001 voided {2}• {2}Customer returned it$/);
-    assert.equal(items[1].detail, "Purchase  •  1 item  •  ₹1000");
-    assert.match(items[2].detail, /^SL-\d{8}-0001 {2}• {2}1 item {2}• {2}₹195$/);
+    assert.equal(items[1].detail, "Purchase  •  1 item  •  ₹1000  •  typed");
+    assert.match(items[2].detail, /^SL-\d{8}-0001 {2}• {2}1 item {2}• {2}₹195 {2}• {2}typed$/);
     assert.equal(items[3].detail, "Amul Milk 1L  •  -2 units (New stock: 13)");
     assert.equal(items[4].detail, "Amul Milk 1L  •  +5 units (New stock: 15)");
     assert.equal(items[5].detail, "Amul Milk 1L  •  ₹65");

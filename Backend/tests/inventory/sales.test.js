@@ -197,7 +197,7 @@ if (!process.env.TEST_DATABASE_URL) {
       `SELECT description FROM audit_logs WHERE action_type = 'BILL_CONFIRMED'`
     );
     assert.equal(audit.length, 1);
-    assert.equal(audit[0].description, `${sale.saleNumber}  •  2 items  •  ₹93`);
+    assert.equal(audit[0].description, `${sale.saleNumber}  •  2 items  •  ₹93  •  typed`);
 
     const second = await sell([{ productId: a, quantity: 1, unitPrice: 10 }]);
     assert.match(second.body.data.saleNumber, /^SL-\d{8}-0002$/);
@@ -307,6 +307,39 @@ if (!process.env.TEST_DATABASE_URL) {
     assert.equal(await stockOf(other), 10);
   });
 
+  test("the activity log tells typed, voice and bill-photo entries apart", async () => {
+    const a = await addProduct({ name: "Parle-G", price: 10, cost: 8, quantity: 50 });
+    const line = [{ productId: a, quantity: 1, unitPrice: 10 }];
+
+    await sell(line, { source: "VOICE" });
+    await sell(line, { source: "OCR" });
+    await buy(line, { source: "VOICE" });
+    await buy(line, { source: "OCR" });
+    await sell(line); // no source given: a typed entry
+
+    const { rows } = await pool.query(
+      `SELECT entity_type, description FROM audit_logs
+        WHERE action_type = 'BILL_CONFIRMED' ORDER BY created_at`
+    );
+    const ending = (row) => row.description.split("  •  ").pop();
+    assert.deepEqual(
+      rows.map((row) => [row.entity_type, ending(row)]),
+      [
+        ["SALE", "via voice"],
+        ["SALE", "via bill photo"],
+        ["PURCHASE", "via voice"],
+        ["PURCHASE", "via bill photo"],
+        ["SALE", "typed"],
+      ]
+    );
+
+    // The same distinction is kept on every stock movement of the entry.
+    const { rows: movements } = await pool.query(
+      `SELECT source FROM stock_movements WHERE movement_type IN ('SALE', 'PURCHASE') ORDER BY created_at, movement_id`
+    );
+    assert.deepEqual(movements.map((row) => row.source), ["VOICE", "OCR", "VOICE", "OCR", "MANUAL"]);
+  });
+
   test("recording a purchase raises stock, sets the cost price and is idempotent", async () => {
     const a = await addProduct({ name: "Parle-G", price: 10, cost: 8, quantity: 5 });
     const key = randomUUID();
@@ -337,7 +370,7 @@ if (!process.env.TEST_DATABASE_URL) {
     const { rows: audit } = await pool.query(
       `SELECT description FROM audit_logs WHERE action_type = 'BILL_CONFIRMED'`
     );
-    assert.equal(audit[0].description, "Purchase  •  1 item  •  ₹190");
+    assert.equal(audit[0].description, "Purchase  •  1 item  •  ₹190  •  typed");
     assert.equal(await count("sales"), 0, "purchases do not create sales");
 
     const again = await request(app).post("/api/v1/purchases").send(body);

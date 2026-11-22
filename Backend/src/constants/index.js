@@ -12,6 +12,8 @@ export const MOVEMENT_TYPES = [
 export const MOVEMENT_SOURCES = ["MANUAL", "SYSTEM", "VOICE", "OCR"];
 // Where a sale or purchase entry came from (sales.source / purchase_batches.source).
 export const BILL_SOURCES = ["MANUAL", "VOICE", "OCR"];
+// How each source reads in the activity log, so a typed entry, a voice note and a bill photo can be told apart.
+export const BILL_SOURCE_LABELS = { MANUAL: "typed", VOICE: "via voice", OCR: "via bill photo" };
 export const UNITS = ["piece", "kg", "g", "L", "ml", "dozen", "packet"];
 export const DEFAULT_CATEGORIES = [
   "Fruits",

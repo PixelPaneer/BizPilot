@@ -1,4 +1,5 @@
 import { withTransaction } from "../config/db.js";
+import { BILL_SOURCE_LABELS } from "../constants/index.js";
 import { insertAuditLog } from "../models/audit.model.js";
 import {
   findPurchaseResponseByKey,
@@ -81,7 +82,7 @@ export async function recordPurchase(businessId, userId, payload) {
       actionType: "BILL_CONFIRMED",
       entityType: "PURCHASE",
       entityId: batchId,
-      description: `Purchase  •  ${lines.length} item${lines.length === 1 ? "" : "s"}  •  ₹${totalAmount}`,
+      description: `Purchase  •  ${lines.length} item${lines.length === 1 ? "" : "s"}  •  ₹${totalAmount}  •  ${BILL_SOURCE_LABELS[payload.source] ?? BILL_SOURCE_LABELS.MANUAL}`,
       outcome: "SUCCESS",
     });
 
