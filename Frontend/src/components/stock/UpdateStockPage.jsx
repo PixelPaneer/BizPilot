@@ -52,6 +52,15 @@ function UpdateStockPage({ products, isLoading, loadError, onRefresh, onNavigate
     setUnsure((current) => current.filter((item) => item.id !== line.id))
   }
 
+  // Takes a line out of one list and puts it in the other, for a bill or note that was put in the wrong
+  // one. It gets the other list's catalog price unless a price was typed, spoken or printed for it.
+  function move(line, from) {
+    const to = from === sales ? purchases : sales
+    const product = products.find((candidate) => candidate.id === line.productId)
+    from.removeLine(line.id)
+    to.addLines([placeLine(line, product, to.mode)], line.hint?.origin ?? null)
+  }
+
   if (isLoading) {
     return <p className={`${cardClasses} text-sm text-muted`}>Loading your products...</p>
   }
@@ -147,8 +156,20 @@ function UpdateStockPage({ products, isLoading, loadError, onRefresh, onNavigate
         )}
       </section>
 
-      <EntrySection section={sales} products={products} onNavigate={onNavigate} />
-      <EntrySection section={purchases} products={products} onNavigate={onNavigate} />
+      <EntrySection
+        section={sales}
+        products={products}
+        onNavigate={onNavigate}
+        onMove={(line) => move(line, sales)}
+        canMove={purchases.phase !== 'done'}
+      />
+      <EntrySection
+        section={purchases}
+        products={products}
+        onNavigate={onNavigate}
+        onMove={(line) => move(line, purchases)}
+        canMove={sales.phase !== 'done'}
+      />
     </div>
   )
 }

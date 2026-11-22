@@ -1,11 +1,10 @@
 import { apiRequest } from './apiClient'
+import { buildBillForm } from './billForm'
 
 // Sends a voice note (`{ audio }`) or a bill photo (`{ image }`) to the server, which reads it into
-// an editable draft. Nothing is saved: stock only changes when the owner confirms the list.
+// an editable draft. `type` (SALE or PURCHASE) is the owner's own answer when they gave one.
+// Nothing is saved: stock only changes when the owner confirms the list.
 // Resolves to { type, lines, warnings } (see docs/API_CONTRACT.md, section 6).
-export function extractBillDraft({ audio, image }) {
-  const file = audio ?? image
-  const form = new FormData()
-  form.append(audio ? 'audio' : 'image', file, file.name || (audio ? 'voice-note' : 'bill.jpg'))
-  return apiRequest('/bills/extract', { method: 'POST', body: form })
+export function extractBillDraft(input) {
+  return apiRequest('/bills/extract', { method: 'POST', body: buildBillForm(input) })
 }

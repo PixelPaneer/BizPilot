@@ -97,11 +97,13 @@ export function useEntrySection({ mode, products, onRefresh }) {
     )
   }
 
-  // Lines read from a voice note or a bill photo (`origin` is 'voice' or 'photo'). A saved list is
-  // started afresh; an empty list is replaced; otherwise the new lines go after the existing ones.
+  // Lines read from a voice note or a bill photo (`origin` is 'voice' or 'photo'), or moved here from
+  // the other list (`origin` is null for a line that was typed, which leaves how the list was made as it
+  // is). A saved list is started afresh; an empty list is replaced; otherwise the new lines go after the
+  // existing ones.
   function addLines(incoming, origin) {
     if (incoming.length === 0) return
-    setSource(origin === 'voice' ? 'VOICE' : 'OCR')
+    if (origin) setSource(origin === 'voice' ? 'VOICE' : 'OCR')
     setShowErrors(false)
     if (phase === 'done') {
       setPhase('editing')
