@@ -30,7 +30,7 @@ def test_a_bill_photo_becomes_a_draft_in_the_same_shape_as_a_voice_note():
     assert (first["quantity"], first["unit"], first["price"]) == (24, "packet", 8)
     assert first["matched_product_id"] == "p-parle"
     assert second["matched_product_id"] is None
-    assert body["warnings"] == ["Line 2 could not be matched to a product."]
+    assert body["warnings"] == ["“Mystery item” could not be matched to a product."]
     assert body["transcript"] is None
     assert vision.calls[0]["image"] == b"jpeg-bytes" and vision.calls[0]["mime_type"] == "image/jpeg"
     assert transcriber.calls == [], "a photo never goes to the speech model"

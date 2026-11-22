@@ -121,7 +121,7 @@ def test_an_unknown_product_is_left_for_the_owner_with_a_warning():
 
     line = response.json()["lines"][0]
     assert line["matched_product_id"] is None
-    assert response.json()["warnings"] == ["Line 1 could not be matched to a product."]
+    assert response.json()["warnings"] == ["“zzzqq” could not be matched to a product."]
 
 
 @respx.mock
@@ -141,7 +141,7 @@ def test_a_missing_quantity_is_not_invented():
     response, _ = send(FakeTranscriber("Parle-G aaya"), FakeLlm({ExtractedBill: reads(bill)}))
 
     assert response.json()["lines"][0]["quantity"] is None
-    assert "Line 1 has no quantity." in response.json()["warnings"]
+    assert "No quantity found for “Parle-G”." in response.json()["warnings"]
 
 
 @respx.mock
@@ -246,3 +246,59 @@ def test_spoken_instructions_reach_the_model_only_as_data_and_never_in_logs(caps
     assert "UNIQUE-SPOKEN-WORDS-8841" not in capsys.readouterr().out
     assert all("UNIQUE-SPOKEN-WORDS-8841" not in str(request.url) for request in catalog.requests)
     assert "UNIQUE-SPOKEN-WORDS-8841" not in response.text
+
+
+# ---- notes that mix sales and purchases ----------------------------------------------------------
+
+
+@respx.mock
+def test_each_line_keeps_its_own_kind_in_a_mixed_note():
+    bill = ExtractedBill(
+        type=None,
+        lines=[
+            ExtractedLine(raw_text="5 maggi bika", name="Maggi", quantity=5, type="SALE"),
+            ExtractedLine(raw_text="parle g 50 aaye", name="Parle-G", quantity=50, type="PURCHASE"),
+        ],
+    )
+    response, _ = send(FakeTranscriber("5 maggi bika, parle g 50 aaye"), FakeLlm({ExtractedBill: reads(bill)}))
+
+    body = response.json()
+    assert body["type"] is None, "the note as a whole is neither"
+    assert [(line["type"], line["matched_product_id"]) for line in body["lines"]] == [
+        ("SALE", "p-maggi"),
+        ("PURCHASE", "p-parle"),
+    ]
+
+
+@respx.mock
+def test_a_line_without_its_own_kind_takes_the_notes_kind():
+    bill = ExtractedBill(type="PURCHASE", lines=[ExtractedLine(name="Parle-G", quantity=5)])
+    response, _ = send(FakeTranscriber("Parle-G 5"), FakeLlm({ExtractedBill: reads(bill)}))
+    assert response.json()["lines"][0]["type"] == "PURCHASE"
+
+
+@respx.mock
+def test_a_line_with_no_kind_anywhere_is_left_for_the_owner_to_decide():
+    bill = ExtractedBill(type=None, lines=[ExtractedLine(name="Parle-G", quantity=5)])
+    response, _ = send(FakeTranscriber("Parle-G 5"), FakeLlm({ExtractedBill: reads(bill)}))
+    assert response.json()["lines"][0]["type"] is None
+
+
+@respx.mock
+def test_the_owners_hint_decides_the_kind_of_every_line():
+    bill = ExtractedBill(
+        type=None,
+        lines=[
+            ExtractedLine(name="Maggi", quantity=5, type="SALE"),
+            ExtractedLine(name="Parle-G", quantity=5, type="PURCHASE"),
+        ],
+    )
+    response, _ = send(
+        FakeTranscriber("x"), FakeLlm({ExtractedBill: reads(bill)}), params={"type": "SALE"}
+    )
+    assert [line["type"] for line in response.json()["lines"]] == ["SALE", "SALE"]
+
+
+def test_the_instructions_ask_for_a_kind_per_line():
+    assert "for EACH line" in EXTRACT_SYSTEM
+    assert "Maggi 5; PURCHASE Parle-G 50" in EXTRACT_SYSTEM
