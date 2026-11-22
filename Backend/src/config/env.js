@@ -31,6 +31,15 @@ if (jwtSecret && jwtSecret.length < 32) {
   throw new Error("JWT_SECRET must be at least 32 characters long.");
 }
 
+// SERVICE_JWT_SECRET is shared with the AI service: each side signs the tokens it sends and checks
+// the ones it receives with it. It may be left out until the AI service is used; the /internal
+// routes and calls to the AI service then answer 503.
+const serviceJwtSecret = process.env.SERVICE_JWT_SECRET?.trim();
+
+if (serviceJwtSecret && serviceJwtSecret.length < 32) {
+  throw new Error("SERVICE_JWT_SECRET must be at least 32 characters long.");
+}
+
 export const env = {
   port,
   nodeEnv,
@@ -54,6 +63,11 @@ export const env = {
   // A refresh token that was just used may be used again for this many seconds, so that two
   // browser tabs refreshing at the same moment do not sign each other out.
   refreshReuseGraceSeconds: Number(process.env.REFRESH_REUSE_GRACE_SECONDS ?? 10),
+  serviceJwtSecret,
+  // Where the Python AI service runs.
+  aiServiceUrl: (process.env.AI_SERVICE_URL || "http://localhost:8000").replace(/\/+$/, ""),
+  // A service token lives this many seconds (the contract says 60 at most).
+  serviceTokenTtlSeconds: 60,
   // The refresh token travels in an httpOnly cookie. Use COOKIE_SAMESITE=none (needs https) only if
   // the website and the API are on different sites.
   cookieSecure: process.env.COOKIE_SECURE

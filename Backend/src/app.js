@@ -12,6 +12,8 @@ import dashboardRoutes from "./routes/dashboard.routes.js";
 import profileRoutes from "./routes/profile.routes.js";
 import settingsRoutes from "./routes/settings.routes.js";
 import authRoutes from "./routes/auth.routes.js";
+import internalRoutes from "./routes/internal.routes.js";
+import { serviceAuth } from "./middleware/serviceAuth.middleware.js";
 import { authenticate } from "./middleware/auth.middleware.js";
 import { requireBusinessContext } from "./middleware/requireBusinessContext.js";
 
@@ -79,6 +81,9 @@ app.use(
   requireBusinessContext,
   settingsRoutes
 );
+
+// Routes for the AI service only (not versioned, not reachable with an owner's sign-in).
+app.use("/internal", serviceAuth, internalRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ success: false, message: "Route not found" });
