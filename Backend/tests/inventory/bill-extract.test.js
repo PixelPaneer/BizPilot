@@ -36,6 +36,7 @@ if (!process.env.TEST_DATABASE_URL) {
     type: "PURCHASE",
     lines: [
       {
+        type: "PURCHASE",
         raw_text: "Parle-G 50 aur aaye",
         quantity: 50,
         unit: null,
@@ -134,6 +135,7 @@ if (!process.env.TEST_DATABASE_URL) {
         type: "PURCHASE",
         lines: [
           {
+            type: "PURCHASE",
             rawText: "Parle-G 50 aur aaye",
             quantity: 50,
             unit: null,
@@ -269,6 +271,21 @@ if (!process.env.TEST_DATABASE_URL) {
     assert.equal(strangeField.status, 400);
 
     assert.equal(seen.url, undefined, "the AI service was never called");
+  });
+
+  test("each line keeps its own kind, so one note can hold sales and purchases", async () => {
+    ai.closeAllConnections?.();
+    await new Promise((resolve) => ai.close(resolve));
+    const line = (type) => ({ ...DRAFT.lines[0], type });
+    await startAi(answer({ ...DRAFT, type: null, lines: [line("SALE"), line("PURCHASE"), line(null)] }));
+
+    const response = await extract();
+    assert.equal(response.status, 200);
+    assert.equal(response.body.data.type, null);
+    assert.deepEqual(
+      response.body.data.lines.map((item) => item.type),
+      ["SALE", "PURCHASE", null]
+    );
   });
 
   test("a call without sign-in is refused", async () => {

@@ -5,6 +5,7 @@ import { callAi } from "./aiClient.js";
 const EXTRACT_TIMEOUT_MS = 60000;
 
 const toLine = (line) => ({
+  type: line.type ?? null, // this line's kind: SALE, PURCHASE, or null when the draft cannot tell
   rawText: line.raw_text,
   quantity: line.quantity,
   unit: line.unit,
