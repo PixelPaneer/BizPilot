@@ -2,7 +2,12 @@ import httpx
 import respx
 from fastapi.testclient import TestClient
 
-from app.agents.inventory.stock_draft import EXTRACT_SYSTEM, ExtractedBill, ExtractedLine
+from app.agents.inventory.stock_draft import (
+    EXTRACT_SYSTEM,
+    IMAGE_EXTRACT_SYSTEM,
+    ExtractedBill,
+    ExtractedLine,
+)
 from app.config import Settings
 from app.llm.base import LlmError
 from app.main import create_app
@@ -30,6 +35,21 @@ class FakeTranscriber:
         return self.text
 
 
+class FakeVision:
+    """Stands in for the image model: answers with `bill`, or fails."""
+
+    def __init__(self, bill=None, error=False):
+        self.bill = bill or ExtractedBill()
+        self.error = error
+        self.calls = []
+
+    async def read(self, *, system, image, mime_type, schema):
+        self.calls.append({"system": system, "image": image, "mime_type": mime_type, "schema": schema})
+        if self.error:
+            raise LlmError("image model down")
+        return self.bill
+
+
 def reads(bill):
     return lambda user, system: bill
 
@@ -42,13 +62,14 @@ def send(
     content_type="audio/webm",
     params=None,
     settings=None,
+    vision=None,
 ):
     settings = settings or Settings(
         service_jwt_secret=SECRET, node_api_url=NODE, _env_file=None
     )
     catalog = FakeCatalog(PRODUCTS)
     respx.get(f"{NODE}/internal/catalog/search").mock(side_effect=catalog)
-    client = TestClient(create_app(settings, llm=llm, transcriber=transcriber))
+    client = TestClient(create_app(settings, llm=llm, transcriber=transcriber, vision=vision))
     response = client.post(
         "/internal/bills/extract",
         headers={**bearer(make_token()), "Content-Type": content_type},
@@ -161,9 +182,9 @@ def test_a_failing_reading_step_is_a_502():
 
 
 @respx.mock
-def test_something_that_is_not_audio_is_refused_before_any_model_call():
+def test_something_that_is_neither_audio_nor_an_image_is_refused_before_any_model_call():
     transcriber = FakeTranscriber("x")
-    response, _ = send(transcriber, FakeLlm(), content_type="image/png")
+    response, _ = send(transcriber, FakeLlm(), content_type="application/pdf")
     assert response.status_code == 400
     assert response.json()["code"] == "UNSUPPORTED_MEDIA"
     assert transcriber.calls == []
@@ -171,14 +192,14 @@ def test_something_that_is_not_audio_is_refused_before_any_model_call():
 
 @respx.mock
 def test_an_empty_or_oversized_upload_is_refused():
-    assert send(FakeTranscriber("x"), FakeLlm(), audio=b"")[0].json()["code"] == "EMPTY_AUDIO"
+    assert send(FakeTranscriber("x"), FakeLlm(), audio=b"")[0].json()["code"] == "EMPTY_FILE"
 
     small = Settings(
         service_jwt_secret=SECRET, node_api_url=NODE, max_audio_bytes=10, _env_file=None
     )
     response, _ = send(FakeTranscriber("x"), FakeLlm(), audio=b"x" * 11, settings=small)
     assert response.status_code == 413
-    assert response.json()["code"] == "AUDIO_TOO_LARGE"
+    assert response.json()["code"] == "FILE_TOO_LARGE"
 
 
 @respx.mock

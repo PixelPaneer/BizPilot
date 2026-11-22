@@ -13,6 +13,7 @@ from app.errors import ApiError
 from app.llm.base import LlmClient, LlmError
 from app.llm.gemini import GeminiClient
 from app.llm.transcribe import GeminiTranscriber
+from app.llm.vision import GeminiVision
 from app.shared.logging import setup_logging
 from app.tools.node_client import NodeClient
 
@@ -44,13 +45,25 @@ def _make_transcriber(settings: Settings):
         return _NoTranscriber()
 
 
+class _NoVision:
+    async def read(self, **kwargs):
+        raise LlmError("No image model is configured.")
+
+
+def _make_vision(settings: Settings):
+    try:
+        return GeminiVision(settings)
+    except LlmError:
+        return _NoVision()
+
+
 def _error_response(status_code: int, message: str, code: str, errors: list | None = None):
     body = {"success": False, "message": message, "errors": errors or [], "code": code}
     return JSONResponse(status_code=status_code, content=body)
 
 
 def create_app(
-    settings: Settings | None = None, llm: LlmClient | None = None, transcriber=None
+    settings: Settings | None = None, llm: LlmClient | None = None, transcriber=None, vision=None
 ) -> FastAPI:
     settings = settings or get_settings()
     setup_logging(settings.log_level)
@@ -64,6 +77,7 @@ def create_app(
     app.state.node_client = NodeClient(settings)
     app.state.llm = llm or _make_llm(settings)
     app.state.transcriber = transcriber or _make_transcriber(settings)
+    app.state.vision = vision or _make_vision(settings)
     app.state.customer_graph = build_customer_graph(app.state.llm, app.state.node_client)
     # Tests (and the app itself) can swap the settings through FastAPI's dependency system.
     app.dependency_overrides[get_settings] = lambda: settings

@@ -30,6 +30,11 @@ class Settings(BaseSettings):
     # A dedicated "gemini-3.5-transcribe" model is not offered to this project's key, so a general
     # Flash model (which accepts audio) does the listening. Check Google's models page before changing.
     gemini_transcribe_model: str = "gemini-3.5-flash-lite"
+    # Reading a bill photo. Reading an image takes longer than a text answer, so it has its own limit.
+    gemini_vision_model: str = "gemini-3.6-flash"
+    gemini_vision_timeout_seconds: float = 40.0
+    # A bill photo larger than this is refused (Node enforces the same limit before forwarding).
+    max_image_bytes: int = 10 * 1024 * 1024
     # A voice note larger than this is refused (Node enforces the same limit before forwarding).
     max_audio_bytes: int = 5 * 1024 * 1024
     # TESTING ONLY: also return the transcript in the draft, to tell a hearing mistake from a reading
