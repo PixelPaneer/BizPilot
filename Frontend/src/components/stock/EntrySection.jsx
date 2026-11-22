@@ -40,7 +40,9 @@ function SectionHeader({ mode }) {
 
 // One list on the Update Stock page: its lines to fill in and check, a total and its own Confirm button;
 // after saving, the result of that entry. `section` comes from useEntrySection.
-function EntrySection({ section, products, onNavigate }) {
+// `onMove(line)` moves a line to the other list (the page does it); `canMove` is false while the other
+// list is showing a saved entry, so its result is not replaced.
+function EntrySection({ section, products, onNavigate, onMove, canMove = true }) {
   const { mode, lines, errors, phase, showErrors, formError, shortages, result, undo } = section
   const isSale = mode === 'sale'
   const isSaving = phase === 'saving'
@@ -240,6 +242,17 @@ function EntrySection({ section, products, onNavigate }) {
                     {product.quantity} {product.unit} in stock
                     {tooMany && ' — more than you have on record'}
                   </p>
+                )}
+                {onMove && !isBlankList([line]) && (
+                  <button
+                    type="button"
+                    onClick={() => onMove(line)}
+                    disabled={isSaving || !canMove}
+                    title={canMove ? undefined : 'The other list was just saved. Press its “Record another” button first.'}
+                    className="mt-1 text-xs font-medium text-forest underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-60 disabled:no-underline"
+                  >
+                    {isSale ? 'Move to Purchases ↓' : 'Move to Sales ↑'}
+                  </button>
                 )}
               </div>
 

@@ -22,6 +22,14 @@ function describeReadError(error) {
   return error?.message || 'Something went wrong. Please try again.'
 }
 
+// What the owner says the bill is. "auto" lets the app work it out from the bill (it can be wrong, and
+// most bills do not say); a choice here is used instead of its guess.
+const BILL_KINDS = [
+  { key: 'auto', label: 'Let the app decide', type: undefined },
+  { key: 'SALE', label: 'Sale', type: 'SALE' },
+  { key: 'PURCHASE', label: 'Purchase', type: 'PURCHASE' },
+]
+
 function formatTime(totalSeconds) {
   const minutes = Math.floor(totalSeconds / 60)
   return `${minutes}:${String(totalSeconds % 60).padStart(2, '0')}`
@@ -36,6 +44,7 @@ function ReadInputPanel({ disabled = false, onDraft }) {
   const [error, setError] = useState('')
   const [seconds, setSeconds] = useState(0)
   const [readingWhat, setReadingWhat] = useState('')
+  const [billKind, setBillKind] = useState('auto')
   const recorderRef = useRef(null)
   const cameraInput = useRef(null)
   const photoInput = useRef(null)
@@ -75,7 +84,7 @@ function ReadInputPanel({ disabled = false, onDraft }) {
     setError('')
     try {
       const image = await prepareBillImage(file)
-      await read({ image }, 'photo')
+      await read({ image, type: BILL_KINDS.find((kind) => kind.key === billKind)?.type }, 'photo')
     } catch (caught) {
       setError(describeReadError(caught))
       setStatus('idle')
@@ -159,6 +168,25 @@ function ReadInputPanel({ disabled = false, onDraft }) {
               <Upload size={14} aria-hidden="true" />
               Upload photo
             </button>
+          </span>
+          <span role="group" aria-label="What kind of bill is this?" className="flex flex-wrap items-center gap-1.5 text-xs text-muted">
+            This bill is:
+            {BILL_KINDS.map((kind) => (
+              <button
+                key={kind.key}
+                type="button"
+                aria-pressed={billKind === kind.key}
+                disabled={busy}
+                onClick={() => setBillKind(kind.key)}
+                className={`rounded-full border px-2.5 py-1 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                  billKind === kind.key
+                    ? 'border-forest bg-forest text-white'
+                    : 'border-line text-ink hover:bg-sage-light'
+                }`}
+              >
+                {kind.label}
+              </button>
+            ))}
           </span>
           {/* `capture` opens the camera on a phone; on a computer it is the same as choosing a file. */}
           <input
