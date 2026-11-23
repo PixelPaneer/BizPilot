@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import Logo from "./Logo.jsx";
 import hero from "./assets/hero.jpg";
 import SignUp from "./SignUp.jsx";
@@ -216,12 +217,12 @@ export default function SignIn({ onSignedIn }) {
               </p>
             )}
 
-            <a
-              href="#forgot"
+            <Link
+              to="/forgotPassword"
               className="-mt-1 mb-[22px] block text-right text-sm font-semibold text-brand-700 hover:underline"
             >
               Forgot password?
-            </a>
+            </Link>
 
             <button
               type="submit"

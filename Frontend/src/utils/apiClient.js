@@ -19,6 +19,9 @@ const AUTH_PATHS = [
   '/auth/logout',
   '/auth/whatsapp/send-otp',
   '/auth/whatsapp/verify-otp',
+  '/auth/forgot-password',
+  '/auth/forgot-password/verify-otp',
+  '/auth/reset-password',
 ]
 
 export class ApiRequestError extends Error {

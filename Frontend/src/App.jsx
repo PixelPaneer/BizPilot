@@ -14,6 +14,7 @@ import ProductInventory from './components/ProductInventory'
 import UpdateStockPage from './components/stock/UpdateStockPage'
 import Sidebar from './components/Sidebar'
 import SignIn from './SignIn'
+import ForgotPassword from './ForgotPassword'
 import { translations } from './context/language'
 import { fetchSettings, toLanguagePreferences } from './utils/settingsApi'
 import { applyTheme } from './utils/theme'
@@ -296,6 +297,7 @@ function App() {
   return (
     <Routes>
       <Route path="/signIn" element={<SignIn onSignedIn={handleSignedIn} />} />
+      <Route path="/forgotPassword" element={<ForgotPassword />} />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/dashboard" element={protectedPage(renderDashboardPage('dashboard', <Dashboard period={period} onPeriodChange={setPeriod} />, {
         showSmallScreenHeading: true,

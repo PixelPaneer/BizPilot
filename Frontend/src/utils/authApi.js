@@ -41,6 +41,28 @@ export function verifyWhatsAppOtp(whatsappNumber, otp) {
   })
 }
 
+// ---- forgot password ----------------------------------------------------------------------------
+// `target` is { channel: 'email', email } or { channel: 'whatsapp', whatsappNumber } -- whichever
+// the user chose for receiving the 6-digit OTP.
+
+// Sends a 6-digit password reset OTP to the chosen email address or WhatsApp number.
+export function sendPasswordResetOtp(target) {
+  return apiRequest('/auth/forgot-password', { method: 'POST', body: target })
+}
+
+// Checks the OTP. May return { resetToken }, which is passed on to resetPassword when present.
+export function verifyPasswordResetOtp(target, otp) {
+  return apiRequest('/auth/forgot-password/verify-otp', { method: 'POST', body: { ...target, otp } })
+}
+
+// Sets the new password after the OTP has been verified.
+export function resetPassword(target, otp, password, resetToken) {
+  return apiRequest('/auth/reset-password', {
+    method: 'POST',
+    body: { ...target, otp, password, ...(resetToken ? { resetToken } : {}) },
+  })
+}
+
 // Ends the sign-in on the server (the refresh cookie stops working).
 export function logoutOwner() {
   return apiRequest('/auth/logout', { method: 'POST' })
