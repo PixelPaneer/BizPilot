@@ -11,7 +11,6 @@ import {
   EyeOff,
   Arrow,
   Box,
-  Receipt,
   Chart,
   Chat,
 } from "./icons.jsx";
@@ -21,11 +20,6 @@ const features = [
     icon: Box,
     title: "Manage inventory",
     text: "Track stock and get low-stock alerts.",
-  },
-  {
-    icon: Receipt,
-    title: "Create bills",
-    text: "Generate bills and download them as PDF.",
   },
   {
     icon: Chart,

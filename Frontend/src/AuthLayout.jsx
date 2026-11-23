@@ -1,10 +1,9 @@
 import Logo from "./Logo.jsx";
 import hero from "./assets/hero.jpg";
-import { Box, Receipt, Chart, Chat } from "./icons.jsx";
+import { Box, Chart, Chat } from "./icons.jsx";
 
 const features = [
   { icon: Box, title: "Manage inventory", text: "Track stock and get low-stock alerts." },
-  { icon: Receipt, title: "Create bills", text: "Generate bills and download them as PDF." },
   { icon: Chart, title: "Business insights", text: "Understand your sales and top products." },
   { icon: Chat, title: "Customer enquiries", text: "Answer product and price questions on WhatsApp." },
 ];
