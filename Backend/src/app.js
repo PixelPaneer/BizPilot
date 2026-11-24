@@ -1,9 +1,9 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import cookieParser from "cookie-parser";
 import { env } from "./config/env.js";
 import analyticsRoutes from "./routes/analytics.routes.js";
-import cookieParser from "cookie-parser";
 import productRoutes from "./routes/product.routes.js";
 import inventoryRoutes from "./routes/inventory.routes.js";
 import saleRoutes from "./routes/sale.routes.js";
@@ -12,6 +12,7 @@ import billRoutes from "./routes/bill.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
 import profileRoutes from "./routes/profile.routes.js";
 import settingsRoutes from "./routes/settings.routes.js";
+import faqRoutes from "./routes/faq.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import internalRoutes from "./routes/internal.routes.js";
 import { serviceAuth } from "./middleware/serviceAuth.middleware.js";
@@ -29,67 +30,28 @@ app.use(
   })
 );
 app.use(express.json());
-app.use(cookieParser())
+app.use(cookieParser());
 
 app.get("/health", (req, res) => {
   res.status(200).json({ success: true, message: "BizPilot API is running" });
 });
-
-// Sign-up, sign-in and "who am I" (rate-limited; no token needed for register and login).
+app.get("/api/v1/health", (req, res) => {
+  res.status(200).json({ success: true, message: "BizPilot API is running." });
+});
 app.use("/api/v1/auth", authRoutes);
 
-// The analytics router applies requireBusinessContext itself, so it only needs authenticate here.
 app.use("/api/v1/analytics", authenticate, analyticsRoutes);
-app.use(
-  "/api/v1/products",
-  authenticate,
-  requireBusinessContext,
-  productRoutes
-);
-app.use(
-  "/api/v1/inventory",
-  authenticate,
-  requireBusinessContext,
-  inventoryRoutes
-);
-app.use(
-  "/api/v1/sales",
-  authenticate,
-  requireBusinessContext,
-  saleRoutes
-);
-app.use(
-  "/api/v1/purchases",
-  authenticate,
-  requireBusinessContext,
-  purchaseRoutes
-);
-app.use(
-  "/api/v1/bills",
-  authenticate,
-  requireBusinessContext,
-  billRoutes
-);
-app.use(
-  "/api/v1/dashboard",
-  authenticate,
-  requireBusinessContext,
-  dashboardRoutes
-);
-app.use(
-  "/api/v1/profile",
-  authenticate,
-  requireBusinessContext,
-  profileRoutes
-);
-app.use(
-  "/api/v1/settings",
-  authenticate,
-  requireBusinessContext,
-  settingsRoutes
-);
+app.use("/api/v1/products", authenticate, requireBusinessContext, productRoutes);
+app.use("/api/v1/inventory", authenticate, requireBusinessContext, inventoryRoutes);
+app.use("/api/v1/sales", authenticate, requireBusinessContext, saleRoutes);
+app.use("/api/v1/purchases", authenticate, requireBusinessContext, purchaseRoutes);
+app.use("/api/v1/bills", authenticate, requireBusinessContext, billRoutes);
+app.use("/api/v1/dashboard", authenticate, requireBusinessContext, dashboardRoutes);
+app.use("/api/v1/profile", authenticate, requireBusinessContext, profileRoutes);
+app.use("/api/v1/settings", authenticate, requireBusinessContext, settingsRoutes);
+app.use("/api/v1/faqs", authenticate, requireBusinessContext, faqRoutes);
+app.use("/api/faqs", authenticate, requireBusinessContext, faqRoutes);
 
-// Routes for the AI service only (not versioned, not reachable with an owner's sign-in).
 app.use("/internal", serviceAuth, internalRoutes);
 
 app.use((req, res) => {
@@ -110,10 +72,7 @@ app.use((error, req, res, next) => {
 
   const response = {
     success: false,
-    message:
-      status === 500
-        ? "Internal server error"
-        : error.message,
+    message: status === 500 ? "Internal server error" : error.message,
     errors: error.errors || [],
   };
 

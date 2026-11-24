@@ -16,12 +16,12 @@ if (!Number.isInteger(port) || port < 1 || port > 65535) {
   throw new Error("PORT must be between 1 and 65535.");
 }
 
-const nodeEnv = process.env.NODE_ENV || "development";
+export const nodeEnv = process.env.NODE_ENV || "development";
 const devUserId = process.env.DEV_USER_ID?.trim() || null;
 
 // JWT_SECRET signs the sign-in tokens. Production will not start without it; elsewhere it may be
 // left out (for example while the DEV_USER_ID shortcut is used), and sign-in then answers 503.
-const jwtSecret = process.env.JWT_SECRET?.trim();
+export const jwtSecret = process.env.JWT_SECRET?.trim();
 
 if (!jwtSecret && nodeEnv === "production") {
   throw new Error("Missing required environment variable: JWT_SECRET");
@@ -76,4 +76,21 @@ export const env = {
   cookieSameSite: ["lax", "strict", "none"].includes(process.env.COOKIE_SAMESITE)
     ? process.env.COOKIE_SAMESITE
     : "lax",
+};
+
+export const smtp = {
+  host: process.env.SMTP_HOST?.trim() || null,
+  port: Number(process.env.SMTP_PORT) || 587,
+  secure: process.env.SMTP_SECURE === "true",
+  user: process.env.SMTP_USER?.trim() || null,
+  pass: process.env.SMTP_PASS || null,
+  from: process.env.SMTP_FROM?.trim() || process.env.SMTP_USER?.trim() || null
+};
+
+export const whatsapp = {
+  apiToken: process.env.WHATSAPP_API_TOKEN?.trim() || null,
+  phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID?.trim() || null,
+  otpTemplate: process.env.WHATSAPP_OTP_TEMPLATE?.trim() || "bizpilot_otp",
+  templateLanguage: process.env.WHATSAPP_TEMPLATE_LANGUAGE?.trim() || "en",
+  apiVersion: process.env.WHATSAPP_API_VERSION?.trim() || "v20.0"
 };

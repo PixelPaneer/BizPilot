@@ -22,7 +22,6 @@ export async function checkDatabaseConnection() {
 
 export async function withTransaction(fn) {
   const client = await pool.connect();
-
   try {
     await client.query("BEGIN");
     const result = await fn(client);
@@ -38,7 +37,6 @@ export async function withTransaction(fn) {
         { cause: error }
       );
     }
-
     throw error;
   } finally {
     client.release();

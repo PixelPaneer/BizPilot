@@ -29,6 +29,18 @@ if (!process.env.TEST_DATABASE_URL) {
     whatsappNumber: "+919876543210",
     password: "correct-horse-battery",
     business: { name: "Asha General Store", type: "Retail", address: "12 MG Road, Pune" },
+    faqs: {
+      paymentMethod: "Both",
+      workingDays: ["Monday", "Tuesday", "Wednesday"],
+      openingTime: "09:30",
+      closingTime: "21:30",
+      delivery: "Yes",
+      deliveryDetails: "",
+      refundReturn: "Other",
+      refundReturnDetails: "Within 7 days with receipt",
+      discount: "No",
+      discountDetails: "",
+    },
   };
 
   const register = (body = account) => request(app).post("/api/v1/auth/register").send(body);
@@ -38,7 +50,7 @@ if (!process.env.TEST_DATABASE_URL) {
   beforeEach(async () => {
     await pool.query(
       `TRUNCATE TABLE inventory_alerts, stock_movements, audit_logs, sale_items, sales,
-         purchase_batches, inventory, products, business_settings, businesses, app_users
+         purchase_batches, inventory, products, business_settings, faqs, businesses, app_users
        CASCADE`
     );
     // These tests use real sign-in: no development shortcut, and a signing key.
@@ -85,6 +97,24 @@ if (!process.env.TEST_DATABASE_URL) {
     assert.equal(settings.rows.length, 1, "the default settings row exists");
   });
 
+  test("register creates the general FAQs for the new business", async () => {
+    const response = await register();
+    const businessId = response.body.data.business.business_id;
+    const { rows } = await pool.query(
+      `SELECT question, answer
+         FROM faqs
+        WHERE business_id = $1
+        ORDER BY created_at`,
+      [businessId]
+    );
+
+    assert.equal(rows.length, 6);
+    assert.ok(rows.some((row) => row.question === "What payment methods are accepted?" && row.answer === "Both"));
+    assert.ok(rows.some((row) => row.question === "What are the working days?" && row.answer === "Monday, Tuesday, Wednesday"));
+    assert.ok(rows.some((row) => row.question === "What are the shop timings?" && row.answer === "Opens at 09:30, closes at 21:30"));
+    assert.ok(rows.some((row) => row.answer === "Other: Within 7 days with receipt"));
+  });
+
   test("a failed sign-up leaves nothing behind (no user without a business)", async () => {
     // A business type longer than its column makes the business insert fail after the user was
     // inserted; the service is called directly because the route would reject it first.
@@ -125,6 +155,12 @@ if (!process.env.TEST_DATABASE_URL) {
       { ...account, business: { ...account.business, name: " " } },
       { ...account, business: { ...account.business, type: "Spaceship" } },
       { ...account, business: { ...account.business, address: "" } },
+      { ...account, faqs: undefined },
+      { ...account, faqs: { ...account.faqs, paymentMethod: "Card" } },
+      { ...account, faqs: { ...account.faqs, workingDays: [] } },
+      { ...account, faqs: { ...account.faqs, openingTime: "25:00" } },
+      { ...account, faqs: { ...account.faqs, openingTime: "21:30", closingTime: "09:30" } },
+      { ...account, faqs: { ...account.faqs, delivery: "Other", deliveryDetails: "" } },
     ];
     for (const body of cases) {
       const response = await register(body);
