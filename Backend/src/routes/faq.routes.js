@@ -1,13 +1,14 @@
 
-const express = require("express");
-const router = express.Router();
+import express from "express";
 
-const faqController = require("../controllers/faq.controller");
+import faqController from "../controllers/faq.controller.js";
 
-const {
+import {
   validateFaq,
   validateFaqId,
-} = require("../validators/faq.validator");
+} from "../validators/faq.validator.js";
+
+const router = express.Router();
 
 // Authentication check
 const requireBusinessAuth = (req, res, next) => {
@@ -39,4 +40,4 @@ router.put("/:faqId", validateFaqId, validateFaq, faqController.updateFaq);
 // DELETE an FAQ (soft delete)
 router.delete("/:faqId", validateFaqId, faqController.deleteFaq);
 
-module.exports = router;
+export default router;

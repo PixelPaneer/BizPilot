@@ -1,5 +1,5 @@
 
-const faqModel = require("../models/faq.model");
+import faqModel from "../models/faq.model.js";
 
 // GET ALL FAQs
 const getAllFaqs = async (businessId, language) => {
@@ -51,10 +51,12 @@ const deleteFaq = async (businessId, faqId) => {
   return { message: "FAQ deleted successfully" };
 };
 
-module.exports = {
+const faqService = {
   getAllFaqs,
   getFaqById,
   createFaq,
   updateFaq,
   deleteFaq,
 };
+
+export default faqService;

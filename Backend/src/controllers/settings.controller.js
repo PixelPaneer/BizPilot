@@ -1,6 +1,6 @@
 
-const cloudinary = require("../config/cloudinary");
-const settingsService = require("../services/settings.service");
+import cloudinary from "../config/cloudinary.js";
+import settingsService from "../services/settings.service.js";
 
 const getBusinessProfile = async (req, res, next) => {
   try {
@@ -249,7 +249,6 @@ const changePassword = async (req, res, next) => {
   }
 };
 
-
 // GET /api/v1/settings
 const getSettings = async (req, res, next) => {
   try {
@@ -266,14 +265,13 @@ const getSettings = async (req, res, next) => {
   }
 };
 
-
 // PATCH /api/v1/settings
 const updateSettings = async (req, res, next) => {
   try {
     const businessId = req.user.business_id;
 
     const result = await settingsService.patchPreferences(
-      businessId, 
+      businessId,
       req.body
     );
 
@@ -287,8 +285,7 @@ const updateSettings = async (req, res, next) => {
   }
 };
 
-
-module.exports = {
+const settingsController = {
   getBusinessProfile,
   updateBusinessProfile,
   uploadBusinessLogo,
@@ -304,3 +301,5 @@ module.exports = {
   getSettings,
   updateSettings,
 };
+
+export default settingsController;

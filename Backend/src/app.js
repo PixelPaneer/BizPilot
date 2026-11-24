@@ -1,10 +1,11 @@
 
-const express = require("express");
-const cors = require("cors");
-const path = require("path");
-const faqRoutes = require("./routes/faq.routes");
+import express from "express";
+import cors from "cors";
+import path from "node:path";
+import multer from "multer";
 
-const settingsRoutes = require("./routes/settings.routes");
+import faqRoutes from "./routes/faq.routes.js";
+import settingsRoutes from "./routes/settings.routes.js";
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.use(
 // Settings API
 app.use("/api/v1/settings", settingsRoutes);
 
+// FAQ API
 app.use("/api/faqs", faqRoutes);
 
 app.get("/", (req, res) => {
@@ -60,16 +62,16 @@ app.use((err, req, res, next) => {
   }
 
   if (
-  err.message === "Business profile not found" ||
-  err.message === "Business settings not found" ||
-  err.message === "Account not found" ||
-  err.message === "FAQ not found"
-) {
-  return res.status(404).json({
-    success: false,
-    message: err.message,
-  });
-}
+    err.message === "Business profile not found" ||
+    err.message === "Business settings not found" ||
+    err.message === "Account not found" ||
+    err.message === "FAQ not found"
+  ) {
+    return res.status(404).json({
+      success: false,
+      message: err.message,
+    });
+  }
 
   if (err.message === "Current password is incorrect") {
     return res.status(400).json({
@@ -78,7 +80,7 @@ app.use((err, req, res, next) => {
     });
   }
 
-  if (err instanceof require("multer").MulterError) {
+  if (err instanceof multer.MulterError) {
     return res.status(400).json({
       success: false,
       message: err.message,
@@ -91,4 +93,4 @@ app.use((err, req, res, next) => {
   });
 });
 
-module.exports = app;
+export default app;

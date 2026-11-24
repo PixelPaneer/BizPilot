@@ -1,5 +1,5 @@
 
-const pool = require("../config/db");
+import pool from "../config/db.js";
 
 // BUSINESS PROFILE
 
@@ -162,10 +162,8 @@ const patchBusinessSettings = async (businessId, data) => {
   values.push(businessId);
 
   const result = await pool.query(query, values);
-
   return result.rows[0];
 };
-
 
 // ACCOUNT DETAILS
 
@@ -239,7 +237,7 @@ const getPasswordHash = async (userId) => {
   return result.rows[0];
 };
 
-module.exports = {
+const settingsModel = {
   getBusinessProfile,
   updateBusinessProfile,
   updateBusinessLogo,
@@ -251,3 +249,5 @@ module.exports = {
   updatePasswordHash,
   getPasswordHash,
 };
+
+export default settingsModel;

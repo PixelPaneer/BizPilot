@@ -1,6 +1,6 @@
 
-const bcrypt = require("bcrypt");
-const settingsModel = require("../models/settings.model");
+import bcrypt from "bcrypt";
+import settingsModel from "../models/settings.model.js";
 
 const getProfile = async (businessId) => {
   const profile = await settingsModel.getBusinessProfile(businessId);
@@ -117,7 +117,7 @@ const changePassword = async (userId, currentPassword, newPassword) => {
   return { message: "Password updated successfully" };
 };
 
-module.exports = {
+const settingsService = {
   getProfile,
   saveProfile,
   saveLogo,
@@ -128,3 +128,5 @@ module.exports = {
   saveAccountDetails,
   changePassword,
 };
+
+export default settingsService;

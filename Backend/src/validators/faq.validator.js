@@ -61,7 +61,7 @@ const validateFaqId = (req, res, next) => {
   next();
 };
 
-module.exports = {
+export {
   validateFaq,
   validateFaqId,
 };

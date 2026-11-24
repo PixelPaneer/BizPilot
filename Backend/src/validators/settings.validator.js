@@ -57,10 +57,8 @@ const validateBusinessProfile = (req, res, next) => {
   next();
 };
 
-
 // Validate Settings PATCH request
 const validateSettings = (req, res, next) => {
-
   const allowedFields = [
     "stock_alerts_enabled",
     "low_stock_alerts_enabled",
@@ -90,7 +88,7 @@ const validateSettings = (req, res, next) => {
     req.body === null ||
     Array.isArray(req.body)
   ) {
-  return res.status(400).json({
+    return res.status(400).json({
       success: false,
       message: "Request body must be a valid JSON object"
     });
@@ -180,8 +178,9 @@ const validateSettings = (req, res, next) => {
   next();
 };
 
-
-module.exports = {
+export {
   validateBusinessProfile,
   validateSettings
 };
+
+

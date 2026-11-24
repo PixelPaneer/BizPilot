@@ -1,5 +1,5 @@
 
-const pool = require("../config/db");
+import pool from "../config/db.js";
 
 // 1. GET ALL ACTIVE FAQs FOR A BUSINESS
 const getAllFaqs = async (businessId, language) => {
@@ -121,10 +121,12 @@ const deleteFaq = async (businessId, faqId) => {
   return result.rows[0];
 };
 
-module.exports = {
+const faqModel = {
   getAllFaqs,
   getFaqById,
   createFaq,
   updateFaq,
   deleteFaq,
 };
+
+export default faqModel;

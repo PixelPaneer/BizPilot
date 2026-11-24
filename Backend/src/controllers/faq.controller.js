@@ -1,5 +1,5 @@
 
-const faqService = require("../services/faq.service");
+import faqService from "../services/faq.service.js";
 
 // 1. GET ALL FAQs
 const getAllFaqs = async (req, res, next) => {
@@ -104,10 +104,12 @@ const deleteFaq = async (req, res, next) => {
   }
 };
 
-module.exports = {
+const faqController = {
   getAllFaqs,
   getFaqById,
   createFaq,
   updateFaq,
   deleteFaq,
 };
+
+export default faqController;

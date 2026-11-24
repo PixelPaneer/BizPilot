@@ -2,7 +2,7 @@
 .env
 
 # Database schema folder
-db_schema/
+db/
 
 # Dependencies
 node_modules/
