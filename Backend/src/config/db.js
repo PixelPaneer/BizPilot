@@ -20,4 +20,20 @@ async function testDatabaseConnection() {
   console.log(`PostgreSQL connected: ${result.rows[0].database}`);
 }
 
-export { pool, testDatabaseConnection };
+// Runs fn(client) in one transaction: everything is kept, or (if fn throws) nothing is.
+async function withTransaction(fn) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await fn(client);
+    await client.query("COMMIT");
+    return result;
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export { pool, testDatabaseConnection, withTransaction };
