@@ -14,6 +14,12 @@ export const authenticate = asyncHandler(async (req, res, next) => {
     return next();
   }
 
+  const [scheme, token] = (req.headers.authorization || "").split(" ");
+
+  if (scheme !== "Bearer" || !token) {
+    throw new ApiError(401, "Authentication required. Please sign in.", [], "UNAUTHENTICATED");
+  }
+
   if (!env.jwtSecret) {
     throw new ApiError(
       503,
@@ -21,12 +27,6 @@ export const authenticate = asyncHandler(async (req, res, next) => {
       [],
       "AUTH_NOT_CONFIGURED"
     );
-  }
-
-  const [scheme, token] = (req.headers.authorization || "").split(" ");
-
-  if (scheme !== "Bearer" || !token) {
-    throw new ApiError(401, "Authentication required. Please sign in.", [], "UNAUTHENTICATED");
   }
 
   let decoded;

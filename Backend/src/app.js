@@ -34,8 +34,9 @@ app.use(cookieParser())
 app.get("/health", (req, res) => {
   res.status(200).json({ success: true, message: "BizPilot API is running" });
 });
-
-// Sign-up, sign-in and "who am I" (rate-limited; no token needed for register and login).
+app.get("/api/v1/health", (req, res) => {
+  res.status(200).json({ success: true, message: "BizPilot API is running." });
+});
 app.use("/api/v1/auth", authRoutes);
 
 // The analytics router applies requireBusinessContext itself, so it only needs authenticate here.
