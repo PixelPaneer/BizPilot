@@ -1,13 +1,23 @@
 """Deterministic calculations over trusted analytics returned by Node."""
 
 from typing import Any
+import math
 
 
-def _number(value: Any) -> float:
+def _number(value: Any) -> float | None:
+    if value is None or isinstance(value, bool):
+        return None
+
     try:
-        return float(value or 0)
+        number = float(value)
+
+        if not math.isfinite(number):
+            return None
+
+        return number
+
     except (TypeError, ValueError):
-        return 0.0
+        return None
 
 
 def build_insights_facts(
