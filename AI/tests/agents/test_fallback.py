@@ -44,3 +44,10 @@ def test_a_greeting_is_a_greeting(message):
 @pytest.mark.parametrize("message", ["???", "kya hai", "is the"])
 def test_a_message_with_nothing_to_look_up_is_something_else(message):
     assert fallback_understanding(message).intent == "other"
+
+
+def test_out_of_stock_is_not_included_in_the_product_name():
+    understanding = fallback_understanding("Is Maggi out of stock?")
+
+    assert understanding.intent == "product_query"
+    assert understanding.mentions[0].text == "maggi"

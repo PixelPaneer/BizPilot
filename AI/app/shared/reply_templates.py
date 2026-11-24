@@ -36,6 +36,12 @@ _NO_MATCH = {
 }
 
 
+_FAQ_NO_MATCH = {
+    "english": "Sorry, I don't have an approved answer for that question. Please contact the shop directly.",
+    "hindi": "माफ़ कीजिए, इस सवाल का स्वीकृत जवाब मेरे पास नहीं है। कृपया दुकान से सीधे संपर्क करें।",
+    "hinglish": "Sorry, is question ka approved answer mere paas nahi hai. Please shop se directly contact karein.",
+}
+
 def language_or_default(language: str | None) -> str:
     return language if language in STATUS_WORDS else "english"
 
@@ -68,3 +74,6 @@ def other_reply(language: str) -> str:
 
 def no_match_reply(language: str) -> str:
     return _NO_MATCH[language_or_default(language)]
+
+def faq_no_match_reply(language: str) -> str:
+    return _FAQ_NO_MATCH[language_or_default(language)]

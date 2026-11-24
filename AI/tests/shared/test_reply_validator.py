@@ -68,3 +68,77 @@ def test_other_languages_are_checked_too(language):
     assert check_reply(good, FACTS, language) == []
     bad = f"Parle-G (₹7) {words['available']}, Parle-G Gold (₹10.50) {words['limited']}."
     assert check_reply(bad, FACTS, language)
+
+def test_a_product_cannot_receive_another_products_price():
+    facts = [
+        {"name": "Maggi", "price": 14, "status": "available"},
+        {"name": "Atta", "price": 50, "status": "limited"},
+    ]
+
+    reply = "Maggi (₹50) is available, Atta (₹14) has limited stock."
+
+    assert check_reply(reply, facts, "english")
+
+
+def test_a_product_cannot_receive_another_products_stock_status():
+    facts = [
+        {"name": "Maggi", "price": 14, "status": "available"},
+        {"name": "Atta", "price": 50, "status": "out"},
+    ]
+
+    reply = "Maggi (₹14) is out of stock, Atta (₹50) is available."
+
+    assert check_reply(reply, facts, "english")
+
+
+def test_correct_product_price_and_status_associations_are_accepted():
+    facts = [
+        {"name": "Maggi", "price": 14, "status": "available"},
+        {"name": "Atta", "price": 50, "status": "limited"},
+    ]
+
+    reply = "Maggi (₹14) is available, Atta (₹50) has limited stock."
+
+    assert check_reply(reply, facts, "english") == []
+
+
+def test_repeated_product_names_with_different_prices_and_statuses_pass():
+    facts = [
+        {"name": "Parle-G", "price": 5, "status": "available"},
+        {"name": "Parle-G", "price": 10, "status": "limited"},
+    ]
+
+    reply = (
+        "Parle-G (₹5) is available, and "
+        "Parle-G (₹10) has limited stock."
+    )
+
+    assert check_reply(reply, facts, "english") == []
+
+
+def test_repeated_product_name_with_wrong_price_is_rejected():
+    facts = [
+        {"name": "Parle-G", "price": 5, "status": "available"},
+        {"name": "Parle-G", "price": 10, "status": "limited"},
+    ]
+
+    reply = (
+        "Parle-G (₹5) is available, and "
+        "Parle-G (₹12) has limited stock."
+    )
+
+    assert check_reply(reply, facts, "english")
+
+
+def test_repeated_product_name_with_swapped_status_is_rejected():
+    facts = [
+        {"name": "Parle-G", "price": 5, "status": "available"},
+        {"name": "Parle-G", "price": 10, "status": "limited"},
+    ]
+
+    reply = (
+        "Parle-G (₹5) has limited stock, and "
+        "Parle-G (₹10) is available."
+    )
+
+    assert check_reply(reply, facts, "english")
