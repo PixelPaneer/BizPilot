@@ -1,0 +1,239 @@
+.update-faqs {
+  width: 100%;
+}
+
+.update-faqs-heading,
+.update-faqs-intro {
+  display: flex;
+  align-items: center;
+}
+
+.update-faqs-heading {
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.update-faqs-intro {
+  gap: 14px;
+}
+
+.update-faqs-icon {
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: var(--light-sage);
+  color: var(--forest-green);
+}
+
+.update-faqs-intro h2 {
+  color: var(--forest-green);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.update-faqs-intro p {
+  margin-top: 3px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.update-faqs-add-btn,
+.update-faqs-submit-btn,
+.update-faqs-cancel-btn,
+.update-faq-edit-btn,
+.update-faq-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.update-faqs-add-btn,
+.update-faqs-submit-btn {
+  background: var(--accent-bg);
+  color: var(--accent-contrast);
+}
+
+.update-faqs-add-btn:hover,
+.update-faqs-submit-btn:hover {
+  background: var(--dark-green);
+}
+
+.update-faqs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.update-faq-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--white);
+  box-shadow: var(--card-shadow);
+}
+
+.update-faq-content {
+  min-width: 0;
+}
+
+.update-faq-content h3 {
+  margin-bottom: 7px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.update-faq-content p {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.update-faq-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.update-faq-edit-btn,
+.update-faqs-cancel-btn {
+  border: 1px solid var(--border-color);
+  background: var(--white);
+  color: var(--text-primary);
+}
+
+.update-faq-edit-btn:hover,
+.update-faqs-cancel-btn:hover {
+  background: var(--light-sage);
+}
+
+.update-faq-delete-btn {
+  border: 1px solid var(--border-color);
+  background: var(--white);
+  color: var(--red);
+}
+
+.update-faq-delete-btn:hover {
+  background: var(--red-100);
+}
+
+.update-faqs-form {
+  margin-bottom: 22px;
+  padding: 20px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--cream);
+}
+
+.update-faqs-form h3 {
+  margin-bottom: 16px;
+  color: var(--forest-green);
+  font-size: 15px;
+}
+
+.update-faqs-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 15px;
+}
+
+.update-faqs-field label {
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.update-faqs-field input,
+.update-faqs-field textarea {
+  width: 100%;
+  padding: 11px 13px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  color: var(--text-primary);
+  font-size: 12px;
+}
+
+.update-faqs-field textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.update-faqs-field input::placeholder,
+.update-faqs-field textarea::placeholder {
+  color: var(--text-light);
+}
+
+.update-faqs-field input:focus,
+.update-faqs-field textarea:focus {
+  border-color: var(--forest-green);
+  box-shadow: 0 0 0 3px rgba(24, 63, 53, 0.07);
+  outline: none;
+}
+
+.update-faqs-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.update-faqs-validation {
+  color: var(--red);
+  font-size: 12px;
+}
+
+.update-faqs-empty {
+  padding: 28px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--white);
+  color: var(--text-secondary);
+  font-size: 13px;
+  text-align: center;
+}
+
+@media (max-width: 650px) {
+  .update-faqs-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .update-faq-card {
+    flex-direction: column;
+  }
+
+  .update-faq-actions {
+    width: 100%;
+  }
+
+  .update-faq-actions button {
+    flex: 1;
+  }
+
+  .update-faqs-form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .update-faqs-form-actions button {
+    width: 100%;
+  }
+}

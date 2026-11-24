@@ -3,10 +3,10 @@ import { apiRequest } from './apiClient'
 
 // Creates the owner and their business in one request. Returns { user, business }; there is no
 // token yet, so the caller signs in next.
-export function registerOwner({ firstName, lastName, email, whatsappNumber, password, business }) {
+export function registerOwner({ firstName, lastName, email, whatsappNumber, password, business, faqs }) {
   return apiRequest('/auth/register', {
     method: 'POST',
-    body: { firstName, lastName, email, whatsappNumber, password, business },
+    body: { firstName, lastName, email, whatsappNumber, password, business, faqs },
   })
 }
 

@@ -10,7 +10,12 @@ const isValidMobileNumber = (number) => /^[6-9]\d{9}$/.test(number);
 const BUSINESS_TYPES = ["Retail", "Wholesale", "Manufacturing", "Food & Beverage", "Services", "Other"];
 
 // Which step each form field is on, and the names the server uses for them.
-const FIELD_STEP = { firstName: 1, lastName: 1, email: 1, whatsapp: 1, password: 1, businessName: 2, businessType: 2, address: 2 };
+const FIELD_STEP = {
+  firstName: 1, lastName: 1, email: 1, whatsapp: 1, password: 1,
+  businessName: 2, businessType: 2, address: 2,
+  paymentMethod: 3, workingDays: 3, openingTime: 3, closingTime: 3,
+  delivery: 3, refundReturn: 3, discount: 3,
+};
 const SERVER_FIELD = {
   firstName: "firstName",
   lastName: "lastName",
@@ -20,7 +25,18 @@ const SERVER_FIELD = {
   "business.name": "businessName",
   "business.type": "businessType",
   "business.address": "address",
+  "faqs.paymentMethod": "paymentMethod",
+  "faqs.workingDays": "workingDays",
+  "faqs.openingTime": "openingTime",
+  "faqs.closingTime": "closingTime",
+  "faqs.delivery": "delivery",
+  "faqs.refundReturn": "refundReturn",
+  "faqs.discount": "discount",
 };
+
+const PAYMENT_METHODS = ["UPI", "Cash", "Both"];
+const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const POLICY_OPTIONS = ["Yes", "No", "Other"];
 
 const selectWrap =
   "flex h-11 items-center gap-2.5 rounded-xl border bg-[var(--auth-input)] px-3.5 text-muted transition " +
@@ -32,6 +48,10 @@ export default function SignUp({ onSignIn, onAccountCreated }) {
   const [form, setForm] = useState({
     firstName: "", lastName: "", email: "", whatsapp: "", password: "",
     businessName: "", businessType: "", address: "",
+    paymentMethod: "", workingDays: [], openingTime: "", closingTime: "",
+    delivery: "", deliveryDetails: "",
+    refundReturn: "", refundReturnDetails: "",
+    discount: "", discountDetails: "",
   });
   const [show, setShow] = useState(false);
   const [errors, setErrors] = useState({});
@@ -133,6 +153,51 @@ export default function SignUp({ onSignIn, onAccountCreated }) {
     return e;
   };
 
+  const validateFaqs = () => {
+    const e = {};
+    if (!form.paymentMethod) e.paymentMethod = "Choose an accepted payment method.";
+    if (form.workingDays.length === 0) e.workingDays = "Choose at least one working day.";
+    if (!form.openingTime) e.openingTime = "Enter your opening time.";
+    if (!form.closingTime) e.closingTime = "Enter your closing time.";
+    else if (form.openingTime && form.closingTime <= form.openingTime) {
+      e.closingTime = "Closing time must be after opening time.";
+    }
+    if (!form.delivery) e.delivery = "Choose a delivery service option.";
+    else if (form.delivery === "Other" && !form.deliveryDetails.trim()) e.delivery = "Please specify your delivery option.";
+    if (!form.refundReturn) e.refundReturn = "Choose a refund and return option.";
+    else if (form.refundReturn === "Other" && !form.refundReturnDetails.trim()) e.refundReturn = "Please specify your refund and return option.";
+    if (!form.discount) e.discount = "Choose a discount option.";
+    else if (form.discount === "Other" && !form.discountDetails.trim()) e.discount = "Please specify your discount option.";
+    return e;
+  };
+
+  const setFaq = (key) => (e) => {
+    const value = e.target.value;
+    setForm((f) => ({ ...f, [key]: value }));
+    setErrors((current) => {
+      if (!current[key] && !current.form) return current;
+      const next = { ...current };
+      delete next[key];
+      delete next.form;
+      return next;
+    });
+  };
+
+  const toggleWorkingDay = (day) => {
+    setForm((f) => ({
+      ...f,
+      workingDays: f.workingDays.includes(day)
+        ? f.workingDays.filter((item) => item !== day)
+        : [...f.workingDays, day],
+    }));
+    setErrors((current) => {
+      if (!current.workingDays) return current;
+      const next = { ...current };
+      delete next.workingDays;
+      return next;
+    });
+  };
+
   const handleNext = (ev) => {
     ev.preventDefault();
     const e = validateAccount();
@@ -140,9 +205,16 @@ export default function SignUp({ onSignIn, onAccountCreated }) {
     if (Object.keys(e).length === 0) setStep(2);
   };
 
-  const handleSubmit = async (ev) => {
+  const handleBusinessNext = (ev) => {
     ev.preventDefault();
     const e = validateBusiness();
+    setErrors(e);
+    if (Object.keys(e).length === 0) setStep(3);
+  };
+
+  const handleSubmit = async (ev) => {
+    ev.preventDefault();
+    const e = validateFaqs();
     setErrors(e);
     if (Object.keys(e).length) return;
 
@@ -158,6 +230,18 @@ export default function SignUp({ onSignIn, onAccountCreated }) {
           name: form.businessName.trim(),
           type: form.businessType,
           address: form.address.trim(),
+        },
+        faqs: {
+          paymentMethod: form.paymentMethod,
+          workingDays: form.workingDays,
+          openingTime: form.openingTime,
+          closingTime: form.closingTime,
+          delivery: form.delivery,
+          deliveryDetails: form.deliveryDetails.trim(),
+          refundReturn: form.refundReturn,
+          refundReturnDetails: form.refundReturnDetails.trim(),
+          discount: form.discount,
+          discountDetails: form.discountDetails.trim(),
         },
       });
     } catch (error) {
@@ -176,6 +260,8 @@ export default function SignUp({ onSignIn, onAccountCreated }) {
       // Show the step that has the problem.
       const fieldKeys = Object.keys(next).filter((key) => key !== "form");
       if (fieldKeys.some((key) => FIELD_STEP[key] === 1)) setStep(1);
+      else if (fieldKeys.some((key) => FIELD_STEP[key] === 2)) setStep(2);
+      else if (fieldKeys.some((key) => FIELD_STEP[key] === 3)) setStep(3);
       return;
     }
     setLoading(false);
@@ -189,10 +275,14 @@ export default function SignUp({ onSignIn, onAccountCreated }) {
     <>
       <h2 className="text-center text-2xl font-bold tracking-tight text-brand-900">Create your account</h2>
       <p className="mb-1 mt-1 text-center text-sm text-muted">
-        {step === 1 ? "Start managing your shop with BizPilot" : "Tell us about your shop"}
+        {step === 1
+          ? "Start managing your shop with BizPilot"
+          : step === 2
+            ? "Tell us about your shop"
+            : "Answer a few general questions for customers"}
       </p>
       <p className="mb-3 text-center text-xs font-semibold uppercase tracking-wide text-brand-700" aria-live="polite">
-        Step {step} of 2
+        Step {step} of 3
       </p>
 
       {step === 1 ? (
@@ -306,8 +396,8 @@ export default function SignUp({ onSignIn, onAccountCreated }) {
             Next <Arrow />
           </button>
         </form>
-      ) : (
-        <form onSubmit={handleSubmit} noValidate>
+      ) : step === 2 ? (
+        <form onSubmit={handleBusinessNext} noValidate>
           <Field
             className="mb-2" id="businessName" label="Shop or business name" icon={Box}
             autoComplete="organization" placeholder="e.g. Sharma General Store"
@@ -348,6 +438,89 @@ export default function SignUp({ onSignIn, onAccountCreated }) {
           <div className="grid grid-cols-[auto_1fr] gap-2">
             <button
               type="button" disabled={loading} onClick={() => setStep(1)}
+              className="h-11 cursor-pointer rounded-xl border border-line px-5 text-base font-semibold text-brand-700 transition hover:bg-mint-50 disabled:opacity-60"
+            >
+              Back
+            </button>
+            <button type="submit" className={buttonClasses}>
+              Next <Arrow />
+            </button>
+          </div>
+        </form>
+      ) : (
+        <form onSubmit={handleSubmit} noValidate>
+          <div className="mb-2">
+            <label htmlFor="paymentMethod" className="mb-1 block text-sm font-semibold text-ink">Accepted payment method</label>
+            <div className={`${selectWrap} ${errors.paymentMethod ? "border-danger-700" : "border-line"}`}>
+              <select id="paymentMethod" value={form.paymentMethod} onChange={setFaq("paymentMethod")} className="min-w-0 flex-1 bg-transparent text-[15px] text-ink outline-none">
+                <option value="">Select payment method</option>
+                {PAYMENT_METHODS.map((method) => <option key={method} value={method}>{method}</option>)}
+              </select>
+            </div>
+            {errors.paymentMethod && <p role="alert" className="mt-1.5 text-[13px] text-danger-700">{errors.paymentMethod}</p>}
+          </div>
+
+          <fieldset className="mb-2">
+            <legend className="mb-1 block text-sm font-semibold text-ink">Working days</legend>
+            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+              {WEEKDAYS.map((day) => (
+                <label key={day} className="flex h-9 items-center gap-2 rounded-lg border border-line px-2 text-sm text-ink">
+                  <input
+                    type="checkbox"
+                    checked={form.workingDays.includes(day)}
+                    onChange={() => toggleWorkingDay(day)}
+                    className="accent-brand-700"
+                  />
+                  {day.slice(0, 3)}
+                </label>
+              ))}
+            </div>
+            {errors.workingDays && <p role="alert" className="mt-1.5 text-[13px] text-danger-700">{errors.workingDays}</p>}
+          </fieldset>
+
+          <div className="mb-2 grid grid-cols-2 gap-2">
+            <Field
+              id="openingTime" label="Opening time"
+              type="time" value={form.openingTime} onChange={set("openingTime")} error={errors.openingTime}
+            />
+            <Field
+              id="closingTime" label="Closing time"
+              type="time" value={form.closingTime} onChange={set("closingTime")} error={errors.closingTime}
+            />
+          </div>
+
+          {[
+            { key: "delivery", detailsKey: "deliveryDetails", label: "Delivery service available" },
+            { key: "refundReturn", detailsKey: "refundReturnDetails", label: "Refund and return accepted" },
+            { key: "discount", detailsKey: "discountDetails", label: "Discount available" },
+          ].map(({ key, detailsKey, label }) => (
+            <div className="mb-2" key={key}>
+              <label htmlFor={key} className="mb-1 block text-sm font-semibold text-ink">{label}</label>
+              <div className={`${selectWrap} ${errors[key] ? "border-danger-700" : "border-line"}`}>
+                <select id={key} value={form[key]} onChange={setFaq(key)} className="min-w-0 flex-1 bg-transparent text-[15px] text-ink outline-none">
+                  <option value="">Select an option</option>
+                  {POLICY_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
+                </select>
+              </div>
+              {errors[key] && <p role="alert" className="mt-1.5 text-[13px] text-danger-700">{errors[key]}</p>}
+              {form[key] === "Other" && (
+                <Field
+                  className="mt-2" id={detailsKey} label="Please specify"
+                  placeholder="Enter details" value={form[detailsKey]} onChange={set(detailsKey)}
+                />
+              )}
+            </div>
+          ))}
+
+          {errors.form && (
+            <p role="alert" className="mb-3 rounded-xl border border-danger-700 px-3.5 py-2.5 text-sm text-danger-700">
+              {errors.form}
+            </p>
+          )}
+
+          <div className="grid grid-cols-[auto_1fr] gap-2">
+            <button
+              type="button" disabled={loading} onClick={() => setStep(2)}
               className="h-11 cursor-pointer rounded-xl border border-line px-5 text-base font-semibold text-brand-700 transition hover:bg-mint-50 disabled:opacity-60"
             >
               Back

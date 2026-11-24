@@ -122,3 +122,37 @@ export function changePassword(currentPassword, newPassword) {
     body: { currentPassword, newPassword },
   })
 }
+
+// ---- FAQs (GET / POST / PUT / DELETE /faqs) ---------------------------------------------------
+
+function toFaq(row) {
+  return {
+    id: row.faq_id,
+    question: row.question,
+    answer: row.answer,
+    language: row.language,
+  }
+}
+
+export async function fetchFaqs() {
+  const rows = await apiRequest('/faqs')
+  return rows.map(toFaq)
+}
+
+export async function createFaq(faq) {
+  return toFaq(await apiRequest('/faqs', {
+    method: 'POST',
+    body: { question: faq.question, answer: faq.answer, language: faq.language },
+  }))
+}
+
+export async function updateFaq(id, faq) {
+  return toFaq(await apiRequest(`/faqs/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    body: { question: faq.question, answer: faq.answer, language: faq.language },
+  }))
+}
+
+export function deleteFaq(id) {
+  return apiRequest(`/faqs/${encodeURIComponent(id)}`, { method: 'DELETE' })
+}
