@@ -24,6 +24,7 @@ const app = express();
 app.use(helmet());
 app.use(
   cors({
+    // FRONTEND_ORIGIN may list several origins, separated by commas.
     origin: env.frontendOrigin.split(",").map((origin) => origin.trim()),
     credentials: true,
   })
@@ -57,12 +58,14 @@ app.use((req, res) => {
   res.status(404).json({ success: false, message: "Route not found" });
 });
 
+// Global Error Handling Middleware
 app.use((error, req, res, next) => {
   if (res.headersSent) {
     return next(error);
   }
 
   const status = error.statusCode || 500;
+
   if (status >= 500) {
     console.error(error);
   }

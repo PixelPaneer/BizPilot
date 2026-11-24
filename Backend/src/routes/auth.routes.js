@@ -28,6 +28,8 @@ const authLimiter = rateLimit({
   }
 });
 
+// These two are driven by the cookie alone, so a page on another site must not be able to trigger
+// them: when the browser says which site the request comes from, it has to be one of ours.
 const allowedOrigins = env.frontendOrigin.split(",").map((origin) => origin.trim());
 
 function requireAllowedOrigin(req, res, next) {
@@ -38,6 +40,7 @@ function requireAllowedOrigin(req, res, next) {
   next();
 }
 
+// Refreshing happens about every 15 minutes per signed-in browser, so its limit is looser.
 const refreshLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: env.authRateLimit * 10,

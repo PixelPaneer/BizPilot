@@ -1,3 +1,5 @@
+import { searchFaqs } from "../services/internalFaq.service.js";
+import { validateFaqSearch } from "../validators/internalFaq.validator.js";
 import { Router } from "express";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { searchCatalog } from "../services/catalog.service.js";
@@ -28,5 +30,26 @@ router.get(
     res.status(200).json({ success: true, data });
   })
 );
+
+
+// Customer-safe FAQ search (AI -> Node).
+// Business identity comes exclusively from the verified service JWT.
+router.get(
+  "/faqs/search",
+  validateFaqSearch,
+  asyncHandler(async (req, res) => {
+    const data = await searchFaqs(req.serviceBusinessId, {
+      q: req.query.q,
+      language: req.query.language,
+      limit: req.query.limit,
+    });
+
+    res.status(200).json({
+      success: true,
+      data,
+    });
+  })
+);
+
 
 export default router;
