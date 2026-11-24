@@ -11,5 +11,5 @@ const faqBodyValidators = [
 export const createFaqValidator = faqBodyValidators;
 export const updateFaqValidator = faqBodyValidators;
 export const faqIdValidator = [
-  param("faqId").isUUID(1).withMessage("Invalid FAQ ID."),
+  param("faqId").isUUID().withMessage("Invalid FAQ ID."),
 ];

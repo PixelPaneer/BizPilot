@@ -10,6 +10,10 @@ export const BUSINESS_TYPES = [
   "Other"
 ];
 
+const PAYMENT_METHODS = ["UPI", "Cash", "Both"];
+const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const POLICY_OPTIONS = ["Yes", "No", "Other"];
+
 const registerValidator = [
   body("firstName").trim().notEmpty().withMessage("First name is required.")
     .isLength({ max: 60 }).withMessage("First name must be 60 characters or fewer."),
@@ -26,7 +30,37 @@ const registerValidator = [
     .isLength({ max: 150 }).withMessage("Business name must be 150 characters or fewer."),
   body("business.type").isIn(BUSINESS_TYPES).withMessage("Choose a business type."),
   body("business.address").trim().notEmpty().withMessage("Business address is required.")
-    .isLength({ max: 500 }).withMessage("Business address must be 500 characters or fewer.")
+    .isLength({ max: 500 }).withMessage("Business address must be 500 characters or fewer."),
+  body("faqs").isObject().withMessage("General FAQ details are required."),
+  body("faqs.paymentMethod").isIn(PAYMENT_METHODS).withMessage("Choose UPI, Cash or Both."),
+  body("faqs.workingDays").isArray({ min: 1 }).withMessage("Choose at least one working day."),
+  body("faqs.workingDays.*").isIn(WEEKDAYS).withMessage("Choose a valid working day."),
+  body("faqs.openingTime").matches(/^([01]\d|2[0-3]):[0-5]\d$/)
+    .withMessage("Enter a valid opening time."),
+  body("faqs.closingTime").matches(/^([01]\d|2[0-3]):[0-5]\d$/)
+    .withMessage("Enter a valid closing time.")
+    .custom((closingTime, { req }) => {
+      const openingTime = req.body.faqs?.openingTime;
+      if (openingTime && closingTime <= openingTime) {
+        throw new Error("Closing time must be after opening time.");
+      }
+      return true;
+    }),
+  body("faqs.delivery").isIn(POLICY_OPTIONS).withMessage("Choose a delivery option."),
+  body("faqs.deliveryDetails")
+    .if(body("faqs.delivery").equals("Other"))
+    .trim().notEmpty().withMessage("Please specify delivery details.")
+    .isLength({ max: 150 }).withMessage("Delivery details must be 150 characters or fewer."),
+  body("faqs.refundReturn").isIn(POLICY_OPTIONS).withMessage("Choose a refund and return option."),
+  body("faqs.refundReturnDetails")
+    .if(body("faqs.refundReturn").equals("Other"))
+    .trim().notEmpty().withMessage("Please specify refund and return details.")
+    .isLength({ max: 150 }).withMessage("Refund and return details must be 150 characters or fewer."),
+  body("faqs.discount").isIn(POLICY_OPTIONS).withMessage("Choose a discount option."),
+  body("faqs.discountDetails")
+    .if(body("faqs.discount").equals("Other"))
+    .trim().notEmpty().withMessage("Please specify discount details.")
+    .isLength({ max: 150 }).withMessage("Discount details must be 150 characters or fewer.")
 ];
 
 // Sign in with an email, or with the WhatsApp number (the sign-in page sends whichever was typed).

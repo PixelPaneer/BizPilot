@@ -9,10 +9,25 @@ import { hashPassword } from "../utils/password.js";
 import { ApiError } from "../utils/ApiError.js";
 import { canonicalWhatsapp } from "../utils/phone.js";
 import * as whatsappSignupService from "./whatsappSignup.service.js";
+import * as faqModel from "../models/faq.model.js";
+
+function signupFaqRows(faqs) {
+  const policyAnswer = (value, details) =>
+    value === "Other" && details ? `Other: ${details}` : value;
+
+  return [
+    { question: "What payment methods are accepted?", answer: faqs.paymentMethod },
+    { question: "What are the working days?", answer: faqs.workingDays.join(", ") },
+    { question: "What are the shop timings?", answer: `Opens at ${faqs.openingTime}, closes at ${faqs.closingTime}` },
+    { question: "Is delivery service available?", answer: policyAnswer(faqs.delivery, faqs.deliveryDetails) },
+    { question: "Are refunds and returns accepted?", answer: policyAnswer(faqs.refundReturn, faqs.refundReturnDetails) },
+    { question: "Is a discount available?", answer: policyAnswer(faqs.discount, faqs.discountDetails) },
+  ];
+}
 
 // Creates the owner and their business together. If either insert fails, neither is kept, so there
 // is never an account without a business.
-export async function registerOwner({ firstName, lastName, email, whatsappNumber, password, business }) {
+export async function registerOwner({ firstName, lastName, email, whatsappNumber, password, business, faqs }) {
   const normalizedEmail = email.trim().toLowerCase();
   const first = firstName.trim();
   const last = lastName.trim();
@@ -41,6 +56,7 @@ export async function registerOwner({ firstName, lastName, email, whatsappNumber
         email: normalizedEmail,
         address: business.address.trim(),
       });
+      await faqModel.createSignupFaqs(client, createdBusiness.business_id, signupFaqRows(faqs));
       return { user, business: createdBusiness };
     });
   } catch (error) {

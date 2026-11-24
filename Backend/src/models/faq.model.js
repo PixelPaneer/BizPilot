@@ -1,5 +1,15 @@
 import { pool } from "../config/db.js";
 
+export async function createSignupFaqs(client, businessId, faqs) {
+  for (const faq of faqs) {
+    await client.query(
+      `INSERT INTO faqs (business_id, question, answer, language)
+       VALUES ($1, $2, $3, 'en')`,
+      [businessId, faq.question, faq.answer]
+    );
+  }
+}
+
 export async function getAllFaqs(businessId, language) {
   const values = [businessId];
   let query = `
