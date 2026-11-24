@@ -5,7 +5,8 @@ import {
   Package,
   Languages,
   Bell,
-  ShieldCheck
+  ShieldCheck,
+  HelpCircle
 } from "lucide-react";
 
 import BusinessProfile from "./BusinessProfile";
@@ -13,6 +14,7 @@ import InventoryPreferences from "./InventoryPreferences";
 import LanguagePreferences from "./LanguagePreferences";
 import NotificationsReports from "./NotificationsReports";
 import AccountSecurity from "./AccountSecurity";
+import UpdateFAQs from "./UpdateFAQs";
 
 import "./SettingsPage.css";
 
@@ -48,6 +50,11 @@ function SettingsPage({
       name: "Account & Security",
       label: t.accountSecurity || "Account & Security",
       icon: ShieldCheck
+    },
+    {
+      name: "Update FAQs",
+      label: "Update FAQs",
+      icon: HelpCircle
     }
   ];
 
@@ -108,6 +115,9 @@ function SettingsPage({
 
             ) : activeSection === "Account & Security" ? (
               <AccountSecurity language={language} />
+
+            ) : activeSection === "Update FAQs" ? (
+              <UpdateFAQs />
 
             ) : null}
 
