@@ -2,6 +2,7 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const faqRoutes = require("./routes/faq.routes");
 
 const settingsRoutes = require("./routes/settings.routes");
 
@@ -23,6 +24,8 @@ app.use(
 
 // Settings API
 app.use("/api/v1/settings", settingsRoutes);
+
+app.use("/api/faqs", faqRoutes);
 
 app.get("/", (req, res) => {
   res.json({
@@ -56,14 +59,17 @@ app.use((err, req, res, next) => {
     });
   }
 
-  if (err.message === "Business profile not found" ||
-      err.message === "Business settings not found" ||
-      err.message === "Account not found") {
-    return res.status(404).json({
-      success: false,
-      message: err.message,
-    });
-  }
+  if (
+  err.message === "Business profile not found" ||
+  err.message === "Business settings not found" ||
+  err.message === "Account not found" ||
+  err.message === "FAQ not found"
+) {
+  return res.status(404).json({
+    success: false,
+    message: err.message,
+  });
+}
 
   if (err.message === "Current password is incorrect") {
     return res.status(400).json({
