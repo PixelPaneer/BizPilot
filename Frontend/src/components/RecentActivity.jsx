@@ -1,5 +1,9 @@
 import { Link } from 'react-router-dom'
+<<<<<<< origin/Frontend_v2
 import { ArrowDown, ArrowRight, ArrowUp, Box, FileText, Undo2 } from 'lucide-react'
+=======
+import { ArrowDown, ArrowRight, ArrowUp, Box, FileText } from 'lucide-react'
+>>>>>>> origin/frontend-insights-anwesha
 import { timeAgo } from '../utils/inventoryUtils'
 
 const TYPE_ICON = {
@@ -7,7 +11,10 @@ const TYPE_ICON = {
   stock_removed: { Icon: ArrowDown, tone: 'red' },
   product_added: { Icon: Box, tone: 'gold' },
   bill_generated: { Icon: FileText, tone: 'sage' },
+<<<<<<< origin/Frontend_v2
   sale_voided: { Icon: Undo2, tone: 'red' },
+=======
+>>>>>>> origin/frontend-insights-anwesha
 }
 
 export default function RecentActivity({ activities }) {
@@ -23,12 +30,15 @@ export default function RecentActivity({ activities }) {
         </Link>
       </div>
 
+<<<<<<< origin/Frontend_v2
       {activities.length === 0 && (
         <p className="py-6 text-center text-sm text-muted">
           No activity yet. Changes to your products and stock will show up here.
         </p>
       )}
 
+=======
+>>>>>>> origin/frontend-insights-anwesha
       <ul className="activity-list">
         {activities.map((a) => {
           const { Icon, tone } = TYPE_ICON[a.type] || TYPE_ICON.product_added

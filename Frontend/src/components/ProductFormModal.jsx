@@ -45,6 +45,7 @@ function resolveCategory(form, categories) {
   return existing ?? typed
 }
 
+<<<<<<< origin/Frontend_v2
 // Turns a failed API call into messages for the form fields.
 function apiErrorToFormErrors(error) {
   if (error?.code === 'DUPLICATE_PRODUCT') {
@@ -68,6 +69,8 @@ function apiErrorToFormErrors(error) {
   return { form: error?.message || 'Something went wrong. Please try again.' }
 }
 
+=======
+>>>>>>> origin/frontend-insights-anwesha
 // Returns an object of error messages. Empty object = everything is valid.
 function validate(form) {
   const errors = {}
@@ -124,7 +127,10 @@ function ProductFormModal({ product, categories = [], onSave, onClose }) {
   const isEditing = Boolean(product)
   const [form, setForm] = useState(isEditing ? productToForm(product) : emptyForm)
   const [errors, setErrors] = useState({})
+<<<<<<< origin/Frontend_v2
   const [isSaving, setIsSaving] = useState(false)
+=======
+>>>>>>> origin/frontend-insights-anwesha
 
   useEffect(() => {
     function handleKeyDown(event) {
@@ -140,9 +146,14 @@ function ProductFormModal({ product, categories = [], onSave, onClose }) {
     setErrors({ ...errors, [name]: undefined })
   }
 
+<<<<<<< origin/Frontend_v2
   async function handleSubmit(event) {
     event.preventDefault()
     if (isSaving) return
+=======
+  function handleSubmit(event) {
+    event.preventDefault()
+>>>>>>> origin/frontend-insights-anwesha
 
     const foundErrors = validate(form)
     if (Object.keys(foundErrors).length > 0) {
@@ -150,6 +161,7 @@ function ProductFormModal({ product, categories = [], onSave, onClose }) {
       return
     }
 
+<<<<<<< origin/Frontend_v2
     setIsSaving(true)
     try {
       // The parent closes this pop-up once the server has saved the product.
@@ -165,6 +177,16 @@ function ProductFormModal({ product, categories = [], onSave, onClose }) {
       setErrors(apiErrorToFormErrors(error))
       setIsSaving(false)
     }
+=======
+    onSave({
+      name: form.name.trim(),
+      category: resolveCategory(form, categories),
+      price: Number(form.price),
+      unit: form.unit,
+      quantity: Number(form.quantity),
+      lowStockThreshold: Number(form.lowStockThreshold),
+    })
+>>>>>>> origin/frontend-insights-anwesha
   }
 
   const title = isEditing ? 'Edit Product' : 'Add Product'
@@ -323,12 +345,15 @@ function ProductFormModal({ product, categories = [], onSave, onClose }) {
             />
           </Field>
 
+<<<<<<< origin/Frontend_v2
           {errors.form && (
             <p role="alert" className="text-sm text-danger-text sm:col-span-2">
               {errors.form}
             </p>
           )}
 
+=======
+>>>>>>> origin/frontend-insights-anwesha
           <div className="mt-2 flex justify-end gap-2 sm:col-span-2">
             <button
               type="button"
@@ -339,10 +364,16 @@ function ProductFormModal({ product, categories = [], onSave, onClose }) {
             </button>
             <button
               type="submit"
+<<<<<<< origin/Frontend_v2
               disabled={isSaving}
               className="rounded-full bg-forest px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-deep disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSaving ? 'Saving...' : isEditing ? 'Save Changes' : 'Add Product'}
+=======
+              className="rounded-full bg-forest px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-deep"
+            >
+              {isEditing ? 'Save Changes' : 'Add Product'}
+>>>>>>> origin/frontend-insights-anwesha
             </button>
           </div>
         </form>

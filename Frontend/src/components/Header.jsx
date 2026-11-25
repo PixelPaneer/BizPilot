@@ -49,26 +49,43 @@ function Header({
   onSignOut,
 }) {
   return (
+<<<<<<< origin/Frontend_v2
     <header className="header-divider sticky top-0 z-50 h-[var(--header-h)] bg-[var(--cream)]">
       <div className="header-inner flex h-full items-center gap-3">
+=======
+    <header className="sticky top-0 z-50 h-[4.5rem] border-b border-line bg-paper">
+      <div className="flex h-full items-center gap-3 px-4 sm:px-6">
+>>>>>>> origin/frontend-insights-anwesha
         <button
           type="button"
           aria-label={isMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
           aria-expanded={isMenuOpen}
           aria-controls="main-navigation"
           onClick={onMenuToggle}
+<<<<<<< origin/Frontend_v2
           className="burger flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-xl border border-line bg-white text-[var(--green)] transition-colors hover:bg-sage-light"
         >
           <Menu
             size={22}
+=======
+          className="burger flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-line bg-white text-ink transition-colors hover:bg-sage-light"
+        >
+          <Menu
+            size={20}
+>>>>>>> origin/frontend-insights-anwesha
             aria-hidden="true"
             className={`transition-transform duration-300 ${isMenuOpen ? 'rotate-180' : ''}`}
           />
         </button>
         <BrandLogo />
         <div className="ml-3 hidden min-w-0 xl:block">
+<<<<<<< origin/Frontend_v2
           <h1 className="page-heading-title truncate">{heading.title}</h1>
           <p className="page-heading-subtitle truncate">{heading.subtitle}</p>
+=======
+          <h1 className="truncate text-xl font-bold text-ink">{heading.title}</h1>
+          <p className="truncate text-sm text-muted">{heading.subtitle}</p>
+>>>>>>> origin/frontend-insights-anwesha
         </div>
         <div className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-2 sm:gap-3">
           <GlobalSearch

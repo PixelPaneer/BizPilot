@@ -38,9 +38,14 @@ const inputWrap =
   "flex h-[50px] items-center gap-2.5 rounded-xl border bg-[var(--auth-input)] px-3.5 text-muted transition " +
   "focus-within:border-brand-500 focus-within:text-brand-700 focus-within:ring-4 focus-within:ring-mint-100";
 
+<<<<<<< origin/Frontend_v2
 export default function SignIn({ onSignedIn }) {
   const { signIn: signInOwner } = useAuth();
   const [identifier, setIdentifier] = useState("");
+=======
+export default function SignIn({ onSignIn }) {
+  const [email, setEmail] = useState("");
+>>>>>>> origin/frontend-insights-anwesha
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
   const [signIn, setSignIn] = useState(true); // true: sign in, false: sign up
@@ -71,7 +76,12 @@ export default function SignIn({ onSignedIn }) {
       return;
     }
     setLoading(false);
+<<<<<<< origin/Frontend_v2
     onSignedIn?.();
+=======
+    console.log("Signed in:", { email });
+    onSignIn?.();
+>>>>>>> origin/frontend-insights-anwesha
   };
 
   return (
@@ -139,7 +149,11 @@ export default function SignIn({ onSignedIn }) {
           <form onSubmit={handleSubmit} noValidate>
             <div className="mb-[18px]">
               <label
+<<<<<<< origin/Frontend_v2
                 htmlFor="identifier"
+=======
+                htmlFor="email"
+>>>>>>> origin/frontend-insights-anwesha
                 className="mb-2 block text-sm font-semibold text-ink"
               >
                 Email or WhatsApp number
