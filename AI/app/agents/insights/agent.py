@@ -25,6 +25,18 @@ class InsightsAgent:
         raw = await fetch_insights_snapshot(
             self._node, business_id=business_id, period=request.period
         )
+        
+        required_keys = {
+        "category_data",
+        "top_data",
+        "revenue_data",
+        "slow_data",
+        }
+
+
+        if not isinstance(raw, dict) or not required_keys.issubset(raw):
+            raise ValueError("Invalid analytics snapshot")
+
         facts = build_insights_facts(
             raw["category_data"],
             raw["top_data"],
