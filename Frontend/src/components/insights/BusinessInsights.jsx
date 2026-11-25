@@ -111,8 +111,25 @@ export default function BusinessInsights() {
   }, [])
 
   useEffect(() => {
-    loadInsights()
-  }, [loadInsights])
+    let cancelled = false
+
+    getInsights({ status: 'ACTIVE' })
+      .then((response) => {
+        if (!cancelled) setInsights(extractInsights(response))
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err.message || 'Unable to load business insights.')
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   // Automatically scroll to the opened category.
   useEffect(() => {
