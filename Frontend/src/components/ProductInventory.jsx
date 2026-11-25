@@ -1,10 +1,6 @@
 import { useEffect, useState } from 'react'
-<<<<<<< origin/Frontend_v2
 import { Database, Plus } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-=======
-import { Plus } from 'lucide-react'
->>>>>>> origin/frontend-insights-anwesha
 import InventoryTabs from './InventoryTabs'
 import InventoryToolbar from './InventoryToolbar'
 import ProductTable from './ProductTable'
@@ -28,11 +24,8 @@ const tabLabels = {
 
 function ProductInventory({
   products,
-<<<<<<< origin/Frontend_v2
   isLoading = false,
   loadError = '',
-=======
->>>>>>> origin/frontend-insights-anwesha
   requestedProductId,
   onRequestHandled,
   onAddProduct,
@@ -56,7 +49,6 @@ function ProductInventory({
   // The page behind a pop-up should not scroll.
   useLockBodyScroll(modal !== 'none')
 
-<<<<<<< origin/Frontend_v2
   // When a product is picked in the top search bar, open its pop-up. The state is updated
   // while rendering (React's recommended way to react to a changed prop), and the parent is
   // told in an effect so it can clear the request.
@@ -96,16 +88,6 @@ function ProductInventory({
     )
   }, [addRequested, setSearchParams])
 
-=======
-  // When a product is picked in the top search bar, open its pop-up.
-  useEffect(() => {
-    if (!requestedProductId) return
-    setSelectedProductId(requestedProductId)
-    setModal('actions')
-    if (onRequestHandled) onRequestHandled()
-  }, [requestedProductId]) // eslint-disable-line react-hooks/exhaustive-deps
-
->>>>>>> origin/frontend-insights-anwesha
   const selectedProduct = products.find((product) => product.id === selectedProductId)
 
   const counts = getStockCounts(products)
@@ -134,7 +116,6 @@ function ProductInventory({
     currentPage * PAGE_SIZE,
   )
 
-<<<<<<< origin/Frontend_v2
   const emptyMessage = isLoading
     ? 'Loading your products...'
     : loadError
@@ -142,12 +123,6 @@ function ProductInventory({
       : products.length === 0
         ? 'Your inventory is empty. Click "Add Product" to add your first product.'
         : 'No products match your current tab, search or filters.'
-=======
-  const emptyMessage =
-    products.length === 0
-      ? 'Your inventory is empty. Click "Add Product" to add your first product.'
-      : 'No products match your current tab, search or filters.'
->>>>>>> origin/frontend-insights-anwesha
 
   function handlePageChange(page) {
     setPageState({ key: filterKey, page })
@@ -168,7 +143,6 @@ function ProductInventory({
     setSortOrder('none')
   }
 
-<<<<<<< origin/Frontend_v2
   // Each handler waits for the server. If the server rejects the change, the error is thrown
   // back into the pop-up (which shows it) and the pop-up stays open.
   async function handleSaveNew(productData) {
@@ -188,25 +162,6 @@ function ProductInventory({
 
   async function handleConfirmDelete() {
     await onDeleteProduct(selectedProductId)
-=======
-  function handleSaveNew(productData) {
-    onAddProduct(productData)
-    closeModal()
-  }
-
-  function handleSaveEdit(productData) {
-    onUpdateProduct(selectedProductId, productData)
-    closeModal()
-  }
-
-  function handleConfirmAdjust(adjustment) {
-    onAdjustStock(selectedProductId, adjustment)
-    closeModal()
-  }
-
-  function handleConfirmDelete() {
-    onDeleteProduct(selectedProductId)
->>>>>>> origin/frontend-insights-anwesha
     closeModal()
   }
 
@@ -227,7 +182,6 @@ function ProductInventory({
           />
           <button
             type="button"
-<<<<<<< origin/Frontend_v2
             onClick={() => navigate('/inventory/update-stock')}
             className="flex flex-1 items-center justify-center gap-2 rounded-full border border-line px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-cream sm:flex-none"
           >
@@ -236,8 +190,6 @@ function ProductInventory({
           </button>
           <button
             type="button"
-=======
->>>>>>> origin/frontend-insights-anwesha
             onClick={() => setModal('add')}
             className="flex flex-1 items-center justify-center gap-2 rounded-full bg-forest px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-deep sm:flex-none"
           >

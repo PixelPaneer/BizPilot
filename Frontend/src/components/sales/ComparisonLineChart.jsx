@@ -12,17 +12,10 @@ import {
 import { formatCompactINR, formatINR } from '../../utils/salesUtils'
 import { ChartLegend } from './SalesUI'
 
-<<<<<<< origin/Frontend_v2
 const GREEN = 'var(--sales-chart-current)'
 const PEACH = 'var(--sales-chart-previous)'
 const GRID = 'var(--sales-chart-grid)'
 const AXIS_TEXT = 'var(--sales-muted)'
-=======
-const GREEN = '#244F3D'
-const PEACH = '#E6A18A'
-const GRID = '#EFEAE0'
-const AXIS_TEXT = '#7A8079'
->>>>>>> origin/frontend-insights-anwesha
 
 function ChartTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
@@ -33,7 +26,6 @@ function ChartTooltip({ active, payload, label }) {
   if (!rows.length) return null
 
   return (
-<<<<<<< origin/Frontend_v2
     <div className="sales-tooltip min-w-[170px] rounded-xl border px-3.5 py-3 text-sm">
       <p className="sales-muted mb-2 text-xs font-medium">{label}</p>
       {rows.map((item) => (
@@ -43,17 +35,6 @@ function ChartTooltip({ active, payload, label }) {
             {item.name}
           </span>
           <span className="sales-heading font-semibold tabular-nums">{formatINR(item.value)}</span>
-=======
-    <div className="min-w-[170px] rounded-xl border border-[#EAE4D8] bg-white px-3.5 py-3 text-sm shadow-[0_12px_32px_rgba(36,79,61,0.14)]">
-      <p className="mb-2 text-xs font-medium text-[#7A8079]">{label}</p>
-      {rows.map((item) => (
-        <div key={item.name} className="flex items-center justify-between gap-6 py-0.5">
-          <span className="flex items-center gap-2 text-[#5E655F]">
-            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />
-            {item.name}
-          </span>
-          <span className="font-semibold tabular-nums text-[#1F2D27]">{formatINR(item.value)}</span>
->>>>>>> origin/frontend-insights-anwesha
         </div>
       ))}
     </div>
@@ -101,11 +82,7 @@ export default function ComparisonLineChart({
               tickFormatter={formatCompactINR}
               width={64}
             />
-<<<<<<< origin/Frontend_v2
             <Tooltip content={<ChartTooltip />} cursor={{ stroke: 'var(--sales-chart-cursor)', strokeDasharray: '4 4' }} />
-=======
-            <Tooltip content={<ChartTooltip />} cursor={{ stroke: '#D9D2C3', strokeDasharray: '4 4' }} />
->>>>>>> origin/frontend-insights-anwesha
             <Area
               type="monotone"
               dataKey={currentKey}
@@ -131,11 +108,7 @@ export default function ComparisonLineChart({
               stroke={GREEN}
               strokeWidth={2.75}
               dot={showDots ? { r: 3.5, fill: GREEN, strokeWidth: 0 } : false}
-<<<<<<< origin/Frontend_v2
               activeDot={{ r: 6, fill: GREEN, stroke: 'var(--sales-surface)', strokeWidth: 2 }}
-=======
-              activeDot={{ r: 6, fill: GREEN, stroke: '#fff', strokeWidth: 2 }}
->>>>>>> origin/frontend-insights-anwesha
             />
           </ComposedChart>
         </ResponsiveContainer>

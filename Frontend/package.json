@@ -7,10 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-<<<<<<< origin/Frontend_v2
     "test": "node --test src/utils/stockEntry.test.js src/utils/mediaCapture.test.js src/utils/billForm.test.js",
-=======
->>>>>>> origin/frontend-insights-anwesha
     "preview": "vite preview"
   },
   "dependencies": {
@@ -22,11 +19,7 @@
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-router-dom": "^7.18.5",
-<<<<<<< origin/Frontend_v2
     "recharts": "^3.10.1",
-=======
-    "recharts": "^3.11.1",
->>>>>>> origin/frontend-insights-anwesha
     "tailwindcss": "^4.3.3",
     "xlsx": "^0.18.5"
   },

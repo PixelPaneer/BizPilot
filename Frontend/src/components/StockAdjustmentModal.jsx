@@ -10,11 +10,8 @@ function StockAdjustmentModal({ product, onConfirm, onClose }) {
   const [type, setType] = useState('add') // 'add' or 'remove'
   const [amountText, setAmountText] = useState('')
   const [showError, setShowError] = useState(false)
-<<<<<<< origin/Frontend_v2
   const [submitError, setSubmitError] = useState('')
   const [isSaving, setIsSaving] = useState(false)
-=======
->>>>>>> origin/frontend-insights-anwesha
 
   useEffect(() => {
     function handleKeyDown(event) {
@@ -49,21 +46,15 @@ function StockAdjustmentModal({ product, onConfirm, onClose }) {
     ? getStockStatus({ quantity: newQuantity, lowStockThreshold: product.lowStockThreshold })
     : null
 
-<<<<<<< origin/Frontend_v2
   async function handleSubmit(event) {
     event.preventDefault()
     if (isSaving) return
-=======
-  function handleSubmit(event) {
-    event.preventDefault()
->>>>>>> origin/frontend-insights-anwesha
 
     if (!isValid) {
       setShowError(true)
       return // do not save an invalid adjustment
     }
 
-<<<<<<< origin/Frontend_v2
     setIsSaving(true)
     setSubmitError('')
     try {
@@ -79,18 +70,12 @@ function StockAdjustmentModal({ product, onConfirm, onClose }) {
       }
       setIsSaving(false)
     }
-=======
-    onConfirm({ newQuantity, type, amount })
->>>>>>> origin/frontend-insights-anwesha
   }
 
   function chooseType(nextType) {
     setType(nextType)
     setShowError(false)
-<<<<<<< origin/Frontend_v2
     setSubmitError('')
-=======
->>>>>>> origin/frontend-insights-anwesha
   }
 
   const toggleBase =
@@ -180,10 +165,7 @@ function StockAdjustmentModal({ product, onConfirm, onClose }) {
               onChange={(event) => {
                 setAmountText(event.target.value)
                 setShowError(false)
-<<<<<<< origin/Frontend_v2
                 setSubmitError('')
-=======
->>>>>>> origin/frontend-insights-anwesha
               }}
               placeholder="e.g. 20"
               aria-invalid={showError && !isValid}
@@ -195,14 +177,11 @@ function StockAdjustmentModal({ product, onConfirm, onClose }) {
                 {error}
               </p>
             )}
-<<<<<<< origin/Frontend_v2
             {submitError && (
               <p role="alert" className="mt-1 text-xs text-danger-text">
                 {submitError}
               </p>
             )}
-=======
->>>>>>> origin/frontend-insights-anwesha
           </div>
 
           {/* Live preview */}
@@ -226,16 +205,10 @@ function StockAdjustmentModal({ product, onConfirm, onClose }) {
             </button>
             <button
               type="submit"
-<<<<<<< origin/Frontend_v2
               disabled={isSaving}
               className="rounded-full bg-forest px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-deep disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSaving ? 'Saving...' : 'Confirm Adjustment'}
-=======
-              className="rounded-full bg-forest px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-deep"
-            >
-              Confirm Adjustment
->>>>>>> origin/frontend-insights-anwesha
             </button>
           </div>
         </form>

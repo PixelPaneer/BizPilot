@@ -4,7 +4,6 @@ import SummaryCard from '../components/DashboardStatCard'
 import InventorySummary from '../components/DashboardInventoryOverview'
 import RecentActivity from '../components/RecentActivity'
 import QuickActions from '../components/QuickActions'
-<<<<<<< origin/Frontend_v2
 import StockInsights from '../components/StockInsights'
 import PeriodSelect from '../components/PeriodSelect'
 import { fetchDashboard } from '../utils/api'
@@ -73,30 +72,6 @@ export default function Dashboard({ period, onPeriodChange }) {
       {toolbar}
       {/* Row 1: Total Revenue | Inventory Overview */}
       <div className="dashboard__row dashboard__row--summary">
-=======
-import { fetchDashboard } from '../utils/api'
-import { formatCurrency } from '../utils/inventoryUtils'
-
-export default function Dashboard({ period }) {
-  const [data, setData] = useState(null)
-
-  useEffect(() => {
-    let cancelled = false
-    fetchDashboard(period).then((d) => {
-      if (!cancelled) setData(d)
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [period])
-
-  if (!data) return <div className="loading">Loading your dashboard…</div>
-
-  return (
-    <div className="dashboard">
-       {/* Row 1: Total Revenue | Inventory Overview */}
-      <div className="dashboard__row">
->>>>>>> origin/frontend-insights-anwesha
         <SummaryCard
           icon={<IndianRupee size={26} strokeWidth={2.4} />}
           label="Total Revenue"
@@ -107,7 +82,6 @@ export default function Dashboard({ period }) {
         <InventorySummary stats={data.inventory} />
       </div>
 
-<<<<<<< origin/Frontend_v2
       {/* Row 2: Quick Actions | Recent Activity */}
       <div className="dashboard__row dashboard__row--detail">
         <QuickActions />
@@ -116,13 +90,6 @@ export default function Dashboard({ period }) {
 
       {/* Row 3: Reorder suggestions | Slow movers | Fast movers */}
       <StockInsights period={period} />
-=======
-      { /* Row 2: Quick Actions | Recent Activity */ }
-      <div className="dashboard__row">
-        <QuickActions />
-        <RecentActivity activities={data.activities} />
-      </div>
->>>>>>> origin/frontend-insights-anwesha
     </div>
   )
 }

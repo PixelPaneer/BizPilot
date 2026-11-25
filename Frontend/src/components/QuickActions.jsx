@@ -2,13 +2,8 @@ import { Link } from 'react-router-dom'
 import { BarChart3, ChevronRight, Database, FileText, Plus } from 'lucide-react'
 
 const actions = [
-<<<<<<< origin/Frontend_v2
   { to: '/inventory?action=add', title: 'Add Product', text: 'Add a new product to your catalog', icon: Plus, tone: 'green' },
   { to: '/inventory/update-stock', title: 'Update Stock', text: 'Record stock in / out for your products', icon: Database, tone: 'gold' },
-=======
-  { to: '/inventory', title: 'Add Product', text: 'Add a new product to your catalog', icon: Plus, tone: 'green' },
-  { to: '/inventory', title: 'Update Stock', text: 'Record stock in / out for your products', icon: Database, tone: 'gold' },
->>>>>>> origin/frontend-insights-anwesha
   { to: '/inventory', title: 'Create Bill / PDF', text: 'Generate a bill for a sale', icon: FileText, tone: 'sage' },
   { to: '/analytics', title: 'View Analytics', text: 'Detailed sales and business insights', icon: BarChart3, tone: 'amber' },
 ]

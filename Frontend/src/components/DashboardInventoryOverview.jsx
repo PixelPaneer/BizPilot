@@ -3,7 +3,6 @@ import { ArrowRight } from 'lucide-react'
 import { toPercent } from '../utils/inventoryUtils'
 
 function DashboardInventoryOverview({ stats }) {
-<<<<<<< origin/Frontend_v2
   if (stats.total === 0) {
     return (
       <section className="card">
@@ -23,8 +22,6 @@ function DashboardInventoryOverview({ stats }) {
     )
   }
 
-=======
->>>>>>> origin/frontend-insights-anwesha
   const inPct = toPercent(stats.inStock, stats.total)
   const lowPct = toPercent(stats.low, stats.total)
   const outPct = Math.max(0, 100 - inPct - lowPct)
@@ -66,7 +63,6 @@ function DashboardInventoryOverview({ stats }) {
           ))}
         </div>
         <div className="stock-bar__labels">
-<<<<<<< origin/Frontend_v2
           {/* A segment of 0% has no label: it would sit on top of its neighbour's. */}
           {segments.map((segment, index) => {
             if (segment.pct === 0) return null
@@ -86,21 +82,6 @@ function DashboardInventoryOverview({ stats }) {
               </span>
             )
           })}
-=======
-          {segments.map((segment, index) => (
-            <span
-              key={segment.key}
-              className={`pct pct--${segment.key}`}
-              style={{
-                left: segment.key === 'low'
-                  ? `${centers[index] - segment.pct / 2}%`
-                  : `${centers[index]}%`,
-              }}
-            >
-              {segment.pct}%
-            </span>
-          ))}
->>>>>>> origin/frontend-insights-anwesha
         </div>
       </div>
     </section>

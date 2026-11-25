@@ -1,46 +1,18 @@
 import { defaultCategories, OTHER_CATEGORY } from '../data/products'
 
 export function getStockStatus(product) {
-<<<<<<< origin/Frontend_v2
   if (product.quantity === 0) return 'out-of-stock'
   if (product.quantity <= product.lowStockThreshold) return 'low-stock'
   return 'in-stock'
-=======
-  if ('quantity' in product) {
-    if (product.quantity === 0) return 'out-of-stock'
-    if (product.quantity <= product.lowStockThreshold) return 'low-stock'
-    return 'in-stock'
-  }
-  if (product.stock <= 0) return 'out'
-  if (product.stock <= product.reorderLevel) return 'low'
-  return 'in'
-}
-
-export function getInventoryStats(products) {
-  const stats = { total: products.length, inStock: 0, low: 0, out: 0 }
-  products.forEach((product) => {
-    const status = getStockStatus(product)
-    if (status === 'out') stats.out += 1
-    else if (status === 'low') stats.low += 1
-    else stats.inStock += 1
-  })
-  return stats
->>>>>>> origin/frontend-insights-anwesha
 }
 
 export function getStockCounts(products) {
   const counts = { total: products.length, inStock: 0, lowStock: 0, outOfStock: 0 }
   products.forEach((product) => {
     const status = getStockStatus(product)
-<<<<<<< origin/Frontend_v2
     if (status === 'in-stock') counts.inStock += 1
     if (status === 'low-stock') counts.lowStock += 1
     if (status === 'out-of-stock') counts.outOfStock += 1
-=======
-    if (status === 'in-stock' || status === 'in') counts.inStock += 1
-    if (status === 'low-stock' || status === 'low') counts.lowStock += 1
-    if (status === 'out-of-stock' || status === 'out') counts.outOfStock += 1
->>>>>>> origin/frontend-insights-anwesha
   })
   return counts
 }
