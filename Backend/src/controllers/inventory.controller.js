@@ -1,4 +1,5 @@
 import * as inventoryService from "../services/inventory.service.js";
+import { buildInventoryCsv, buildInventoryPdf } from "../services/inventoryExport.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 export const listInventory = asyncHandler(async (req, res) => {
@@ -44,4 +45,61 @@ export const getHistory = asyncHandler(async (req, res) => {
     req.query
   );
   res.status(200).json({ success: true, data });
+});
+
+function safeExportName(tabLabel) {
+  const slug = String(tabLabel || "all-products")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "all-products";
+  const date = new Date().toISOString().slice(0, 10);
+  return `bizpilot-${slug}-${date}`;
+}
+
+export const exportInventory = asyncHandler(async (req, res) => {
+  if (!["csv", "pdf"].includes(req.params.format)) {
+    res.status(400).json({
+      success: false,
+      message: "Export format must be csv or pdf.",
+      errors: [],
+      code: "INVALID_EXPORT_FORMAT",
+    });
+    return;
+  }
+
+  const data = await inventoryService.getInventory(req.businessId, {
+    ...req.query,
+    page: 1,
+    limit: 500,
+  });
+  if (data.items.length === 0) {
+    res.status(404).json({
+      success: false,
+      message: "There are no products to export with the current filters.",
+      errors: [],
+      code: "NO_EXPORT_DATA",
+    });
+    return;
+  }
+
+  const tabLabel = req.query.status
+    ? req.query.status === "in-stock"
+      ? "In Stock"
+      : req.query.status === "low-stock"
+        ? "Low Stock"
+        : "Out of Stock"
+    : "All Products";
+  const fileName = safeExportName(tabLabel);
+
+  if (req.params.format === "csv") {
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="${fileName}.csv"`);
+    res.send(`\ufeff${buildInventoryCsv(data.items)}`);
+    return;
+  }
+
+  const pdf = await buildInventoryPdf(data.items);
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `attachment; filename="${fileName}.pdf"`);
+  res.send(pdf);
 });

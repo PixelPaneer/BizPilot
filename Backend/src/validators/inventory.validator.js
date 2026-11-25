@@ -1,8 +1,13 @@
-import { body, query } from "express-validator";
+import { body, param, query } from "express-validator";
 import { validate } from "../middleware/validate.middleware.js";
 import { validateProductListQuery } from "./product.validator.js";
 
 export const validateInventoryListQuery = validateProductListQuery;
+
+export const validateInventoryExport = [
+  param("format").isIn(["csv", "pdf"]),
+  ...validateInventoryListQuery,
+];
 
 // days: how many days of sales the pace is judged on; limit: how many suggestions to return.
 export const validateReorderQuery = [

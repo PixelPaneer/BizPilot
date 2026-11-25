@@ -736,4 +736,55 @@ test("product and inventory reads filter, sort, search, summarize, and isolate t
   assert.equal(hiddenProduct.status, 404);
   assert.equal(hiddenProduct.body.code, "NOT_FOUND");
 });
+
+test("inventory exports download filtered CSV and PDF files", async () => {
+  await addProduct({
+    name: "Export Sugar",
+    category: "Pantry",
+    price: 45,
+    quantity: 12,
+    threshold: 5,
+  });
+  await addProduct({
+    name: "Export Rice",
+    category: "Pantry",
+    price: 60,
+    quantity: 2,
+    threshold: 5,
+  });
+
+  const csv = await request(app)
+    .get("/api/v1/inventory/export/csv")
+    .query({ status: "low-stock", category: "Pantry" });
+  assert.equal(csv.status, 200);
+  assert.match(csv.headers["content-type"], /^text\/csv/);
+  assert.match(csv.headers["content-disposition"], /bizpilot-low-stock-\d{4}-\d{2}-\d{2}\.csv/);
+  assert.match(csv.text, /Product Name/);
+  assert.match(csv.text, /Export Rice/);
+  assert.doesNotMatch(csv.text, /Export Sugar/);
+
+  const pdf = await request(app)
+    .get("/api/v1/inventory/export/pdf")
+    .query({ status: "low-stock", category: "Pantry" })
+    .buffer(true)
+    .parse((response, callback) => {
+      const chunks = [];
+      response.on("data", (chunk) => chunks.push(chunk));
+      response.on("end", () => callback(null, Buffer.concat(chunks)));
+    });
+  assert.equal(pdf.status, 200);
+  assert.equal(pdf.headers["content-type"], "application/pdf");
+  assert.match(pdf.headers["content-disposition"], /bizpilot-low-stock-\d{4}-\d{2}-\d{2}\.pdf/);
+  assert.equal(Buffer.isBuffer(pdf.body), true);
+  assert.equal(pdf.body.subarray(0, 4).toString(), "%PDF");
+
+  const invalidFormat = await request(app).get("/api/v1/inventory/export/xlsx");
+  assert.equal(invalidFormat.status, 400);
+
+  const emptyExport = await request(app)
+    .get("/api/v1/inventory/export/csv")
+    .query({ search: "No-Such-Product" });
+  assert.equal(emptyExport.status, 404);
+  assert.equal(emptyExport.body.code, "NO_EXPORT_DATA");
+});
 }
