@@ -25,9 +25,17 @@ async def fetch_insights_snapshot(
         {**params, "limit": 5, "sort": "units"},
     )
 
-    return {
-        "category_data": category_data or {},
-        "top_data": top_data or {},
-        "revenue_data": revenue_data or {},
-        "slow_data": slow_data or {},
+    datasets = {
+    "category_data": category_data,
+    "top_data": top_data,
+    "revenue_data": revenue_data,
+    "slow_data": slow_data,
     }
+
+    for name, data in datasets.items():
+        if not isinstance(data, dict):
+            raise ValueError(
+                f"Invalid analytics response: {name}"
+            )
+
+    return datasets
