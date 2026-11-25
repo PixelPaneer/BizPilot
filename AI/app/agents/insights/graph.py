@@ -68,6 +68,23 @@ def _answer_uses_only_known_numbers(
 
     return True
 
+_UNSUPPORTED_METRIC_TERMS = re.compile(
+    r"\b(profit|profitability|margin|gross margin|net margin)\b",
+    re.IGNORECASE,
+)
+
+
+def _answer_uses_supported_metrics(answer: InsightsAnswer) -> bool:
+    text = " ".join(
+        [answer.summary]
+        + [
+            part
+            for item in answer.insights
+            for part in (item.title, item.observation, item.recommendation)
+        ]
+    )
+    return not _UNSUPPORTED_METRIC_TERMS.search(text)
+
 
 def build_insights_graph(llm: LlmClient):
     async def explain(state: InsightsState) -> InsightsState:
@@ -85,7 +102,10 @@ def build_insights_graph(llm: LlmClient):
                 schema=InsightsAnswer,
                 temperature=0.1,
             )
-            if _answer_uses_only_known_numbers(drafted, state["facts"]):
+            if (
+                _answer_uses_only_known_numbers(drafted, state["facts"])
+                and _answer_uses_supported_metrics(drafted)
+                ):
                 return {
                     "answer": drafted.model_dump(),
                     "used_fallback": False,
@@ -93,7 +113,12 @@ def build_insights_graph(llm: LlmClient):
         except LlmError:
             pass
 
-        fallback = deterministic_fallback(state["facts"], state["period"])
+        fallback = deterministic_fallback(
+            state["facts"],
+            state["period"],
+            mode=state["mode"],
+            question=state.get("question"),
+            )
         return {"answer": fallback, "used_fallback": True}
 
     graph = StateGraph(InsightsState)

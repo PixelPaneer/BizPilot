@@ -36,4 +36,4 @@ Dashboard mode:
 }
 ```
 
-The Node backend must add the four service-authenticated `/internal/analytics/*` endpoints described in `Backend/INTEGRATION.md` before this agent can retrieve real metrics.
+The Node backend provides the four service-authenticated `/internal/analytics/*` endpoints used by this agent.

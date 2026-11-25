@@ -66,3 +66,34 @@ async def test_graph_rejects_unverified_numeric_claim():
     # The current graph sends invalid answers to its existing fallback.
     # We are deliberately not changing or testing the fallback's content here.
     assert result["used_fallback"] is True
+
+async def test_question_mode_uses_question_aware_fallback():
+    graph = build_insights_graph(FakeLlm())  # No handler: simulates LLM failure.
+
+    facts = {
+        **FACTS,
+        "top_products": [
+            {"productName": "Biscuits", "revenue": 700},
+        ],
+    }
+
+    result = await graph.ainvoke({
+        "mode": "question",
+        "period": "last30",
+        "question": "Which products generated the most revenue?",
+        "facts": facts,
+    })
+
+    assert result["used_fallback"] is True
+    assert "Biscuits" in result["answer"]["summary"]
+
+
+def test_graph_rejects_profit_claims():
+    from app.agents.insights.graph import _answer_uses_supported_metrics
+
+    answer = InsightsAnswer(
+        summary="Revenue was ₹1,000 and profit was ₹500.",
+        insights=[],
+    )
+
+    assert _answer_uses_supported_metrics(answer) is False

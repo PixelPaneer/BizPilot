@@ -136,3 +136,19 @@ async def test_agent_passes_selected_period_to_node():
         call["params"]["period"] == "last7"
         for call in node.calls
     )
+
+async def test_agent_question_mode_reaches_question_fallback():
+    node = FakeNode()
+    agent = InsightsAgent(FakeLlm(), node)
+
+    request = InsightsRequest(
+        mode="question",
+        period="last30",
+        question="Which products generated the most revenue?",
+    )
+
+    response = await agent.run(request, business_id=BUSINESS_ID)
+
+    assert response.mode == "question"
+    assert response.used_fallback is True
+    assert "Biscuits" in response.summary

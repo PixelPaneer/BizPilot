@@ -98,3 +98,39 @@ def test_other_analytics_data_is_preserved():
     assert facts["categories"] == categories
     assert facts["top_products"] == top_products
     assert facts["slow_movers"] == slow_products
+
+def test_question_fallback_answers_top_products():
+    from app.agents.insights.calculations import deterministic_fallback
+
+    facts = {
+        "revenue": {"available": False},
+        "categories": [],
+        "top_products": [
+            {"productName": "Biscuits", "revenue": 700},
+            {"productName": "Juice", "revenue": 500},
+        ],
+        "slow_movers": [],
+    }
+
+    result = deterministic_fallback(
+        facts, "last30", mode="question",
+        question="Which products generated the most revenue?",
+    )
+
+    assert "Biscuits" in result["summary"]
+    assert "Juice" in result["summary"]
+    assert result["insights"] == []
+
+
+def test_question_fallback_does_not_invent_missing_revenue():
+    from app.agents.insights.calculations import deterministic_fallback
+
+    result = deterministic_fallback(
+        {"revenue": {"available": False}, "categories": [],
+         "top_products": [], "slow_movers": []},
+        "last30",
+        mode="question",
+        question="What was my revenue?",
+    )
+
+    assert "unavailable" in result["summary"].lower()

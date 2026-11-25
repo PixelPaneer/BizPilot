@@ -103,6 +103,88 @@ def build_insights_facts(
         "slow_movers": slow_data.get("products", []),
     }
 
+def _question_fallback(facts: dict, period: str, question: str) -> dict:
+    q = question.lower()
+    summary = ""
+    insights = []
+
+    if any(word in q for word in ("slow", "not selling", "unsold", "dead stock")):
+        products = [
+            p for p in (facts.get("slow_movers") or [])
+            if isinstance(p, dict)
+        ]
+        if products:
+            names = ", ".join(
+                str(p.get("productName") or "Unnamed product")
+                for p in products[:5]
+            )
+            summary = f"Slow-moving products for {period}: {names}."
+        else:
+            summary = "No slow-moving product data is available for this period."
+
+    elif any(word in q for word in ("category", "categories")):
+        categories = [
+            c for c in (facts.get("categories") or [])
+            if isinstance(c, dict)
+        ]
+        categories.sort(
+            key=lambda c: _number(c.get("revenue")) or 0,
+            reverse=True,
+        )
+        if categories:
+            names = ", ".join(
+                f"{c.get('category', 'Unnamed category')} "
+                f"(₹{_number(c.get('revenue')):,.2f})"
+                for c in categories[:3]
+                if _number(c.get("revenue")) is not None
+            )
+            summary = f"Top categories by revenue for {period}: {names}."
+        else:
+            summary = "Category sales data is unavailable for this period."
+
+    elif any(word in q for word in ("product", "item", "bestseller", "best seller")):
+        products = [
+            p for p in (facts.get("top_products") or [])
+            if isinstance(p, dict)
+        ]
+        if products:
+            names = ", ".join(
+                f"{p.get('productName', 'Unnamed product')} "
+                f"(₹{_number(p.get('revenue')):,.2f})"
+                for p in products[:3]
+                if _number(p.get("revenue")) is not None
+            )
+            summary = f"Top products by revenue for {period}: {names}."
+        else:
+            summary = "Top-product data is unavailable for this period."
+
+    elif any(word in q for word in ("revenue", "earning", "sales", "growth")):
+        revenue = facts.get("revenue", {})
+        if revenue.get("available"):
+            summary = (
+                f"Revenue for {period} was "
+                f"₹{revenue['current_period']:,.2f}. "
+            )
+            if revenue.get("previous_period") is not None:
+                summary += (
+                    f"Previous-period revenue was "
+                    f"₹{revenue['previous_period']:,.2f}."
+                )
+                if revenue.get("change_percent") is not None:
+                    summary += (
+                        f" Change: {revenue['change_percent']:.2f}%."
+                    )
+        else:
+            summary = f"Revenue data for {period} is unavailable."
+
+    else:
+        summary = (
+            "I can answer questions about revenue, top products, "
+            "category sales, and slow-moving products using the "
+            "available business data. Please ask about one of these."
+        )
+
+    return {"summary": summary, "insights": insights}
 
 def deterministic_fallback(
     facts: dict,
@@ -114,7 +196,8 @@ def deterministic_fallback(
     Generate a deterministic response when the LLM is unavailable
     or its response fails validation.
     """
-
+    if mode == "question":
+        return _question_fallback(facts, period, question or "")
     revenue = facts["revenue"]
 
     current = revenue["current_period"]
