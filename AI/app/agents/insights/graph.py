@@ -35,17 +35,38 @@ def _numbers_in(value: str) -> set[str]:
     return {_normalise_number(match) for match in _NUMBER.findall(value)}
 
 
-def _answer_uses_only_known_numbers(answer: InsightsAnswer, facts: dict) -> bool:
+def _answer_uses_only_known_numbers(
+    answer: InsightsAnswer,
+    facts: dict
+) -> bool:
+
     allowed = _numbers_in(json.dumps(facts, ensure_ascii=False))
+
     answer_text = " ".join(
         [answer.summary]
         + [
             part
             for item in answer.insights
-            for part in (item.title, item.observation, item.recommendation)
+            for part in (
+                item.title,
+                item.observation,
+                item.recommendation
+            )
         ]
     )
-    return _numbers_in(answer_text).issubset(allowed)
+
+    answer_numbers = _numbers_in(answer_text)
+
+    if not answer_numbers.issubset(allowed):
+        return False
+
+    revenue = facts.get("revenue", {})
+
+    if not revenue.get("available", True):
+        if _numbers_in(answer.summary):
+            return False
+
+    return True
 
 
 def build_insights_graph(llm: LlmClient):
