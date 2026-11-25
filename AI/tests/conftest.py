@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 from app.config import Settings
 from app.main import create_app
 
-SECRET = "test-secret-test-secret-test-secret-1234"
+SECRET = "test-secret-test-secret-test-secret-test-secret-test-secret-1234"
 BUSINESS_ID = str(uuid.uuid4())
 
 
