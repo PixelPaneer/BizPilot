@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   adjustInventory,
+  exportInventory,
   getAlerts,
   getHistory,
   getReorderSuggestions,
@@ -9,6 +10,7 @@ import {
 } from "../controllers/inventory.controller.js";
 import {
   validateAlertQuery,
+  validateInventoryExport,
   validateInventoryAdjustment,
   validateInventoryHistoryQuery,
   validateInventoryListQuery,
@@ -19,6 +21,7 @@ import { validateProductId } from "../validators/product.validator.js";
 const router = Router();
 
 router.get("/", validateInventoryListQuery, listInventory);
+router.get("/export/:format", validateInventoryExport, exportInventory);
 router.get("/summary", getSummary);
 router.get("/alerts", validateAlertQuery, getAlerts);
 router.get("/reorder-suggestions", validateReorderQuery, getReorderSuggestions);

@@ -1,4 +1,5 @@
 import { withTransaction } from "../config/db.js";
+import { BILL_SOURCE_LABELS } from "../constants/index.js";
 import { insertAuditLog } from "../models/audit.model.js";
 import {
   findSaleResponseByKey,
@@ -138,7 +139,7 @@ export async function recordSale(businessId, userId, payload) {
       actionType: "BILL_CONFIRMED",
       entityType: "SALE",
       entityId: sale.sale_id,
-      description: `${saleNumber}  •  ${itemsText(lines.length)}  •  ₹${totalAmount}`,
+      description: `${saleNumber}  •  ${itemsText(lines.length)}  •  ₹${totalAmount}  •  ${BILL_SOURCE_LABELS[payload.source] ?? BILL_SOURCE_LABELS.MANUAL}`,
       outcome: "SUCCESS",
     });
 

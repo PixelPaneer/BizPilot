@@ -112,6 +112,30 @@ if (!process.env.TEST_DATABASE_URL) {
     }
   });
 
+  test("FAQ create, read, update and delete accept generated UUIDs", async () => {
+    const created = await request(app)
+      .post("/api/v1/faqs")
+      .send({ question: "Test FAQ", answer: "Original answer" });
+    assert.equal(created.status, 201);
+    const faqId = created.body.data.faq_id;
+    assert.match(faqId, /^[0-9a-f]{8}-[0-9a-f]{4}-4/i);
+
+    const read = await request(app).get(`/api/v1/faqs/${faqId}`);
+    assert.equal(read.status, 200);
+    assert.equal(read.body.data.question, "Test FAQ");
+
+    const updated = await request(app)
+      .put(`/api/v1/faqs/${faqId}`)
+      .send({ question: "Updated FAQ", answer: "Updated answer" });
+    assert.equal(updated.status, 200);
+    assert.equal(updated.body.data.question, "Updated FAQ");
+    assert.equal(updated.body.data.answer, "Updated answer");
+
+    const deleted = await request(app).delete(`/api/v1/faqs/${faqId}`);
+    assert.equal(deleted.status, 200);
+    assert.equal((await request(app).get(`/api/v1/faqs/${faqId}`)).status, 404);
+  });
+
   // Drops a product's stock below its threshold and reports how many alerts that created.
   async function alertsAfterLowStock() {
     const productId = await withTransaction(async (client) => {
