@@ -1,63 +1,41 @@
+// Talks to the Node backend: POST /api/v1/insights/ask (Node forwards it to the AI Insights Agent).
 
-const API_BASE = '/api/v1/insights'
+const API_URL = '/api/v1/insights/ask'
 
-async function request(url, options = {}) {
-  const response = await fetch(url, {
-    ...options,
-    credentials: 'include',
+// Periods the AI endpoint understands. A custom date range is not supported by it.
+export const SUPPORTED_PERIODS = ['last7', 'last30', 'last90', 'thisMonth']
+
+function getAccessToken() {
+  // TODO: replace with the app's real sign-in token source (the merged frontend's auth helper).
+  return localStorage.getItem('accessToken')
+}
+
+async function post(body) {
+  const token = getAccessToken()
+  const response = await fetch(API_URL, {
+    method: 'POST',
     headers: {
       Accept: 'application/json',
-      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
-      ...options.headers,
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
+    body: JSON.stringify(body),
   })
 
-  const data = await response.json().catch(() => null)
+  const payload = await response.json().catch(() => null)
 
-  if (!response.ok) {
-    throw new Error(
-      data?.message || data?.error || `Request failed (${response.status})`
-    )
+  if (!response.ok || !payload?.success) {
+    throw new Error(payload?.message || `Request failed (${response.status})`)
   }
 
-  return data
+  // { mode, period, summary, insights: [{ title, observation, recommendation }], used_fallback }
+  return payload.data
 }
 
-export function getInsights(filters = {}) {
-  const params = new URLSearchParams()
-
-  if (filters.type) params.set('type', filters.type)
-  if (filters.status) params.set('status', filters.status)
-
-  const query = params.toString()
-
-  return request(`${API_BASE}${query ? `?${query}` : ''}`)
+export function getDashboardInsights(period) {
+  return post({ mode: 'dashboard', period })
 }
 
-export function getInsightById(id) {
-  if (!id) throw new Error('Insight ID is required')
-
-  return request(`${API_BASE}/${encodeURIComponent(id)}`)
-}
-
-export function sendInsightInteraction(id, interaction) {
-  if (!id) throw new Error('Insight ID is required')
-
-  const allowed = ['VIEWED', 'DISMISSED', 'ACTED']
-
-  if (!allowed.includes(interaction)) {
-    throw new Error('Invalid insight interaction')
-  }
-
-  return request(`${API_BASE}/${encodeURIComponent(id)}/interactions`, {
-    method: 'POST',
-    body: JSON.stringify({ interaction }),
-  })
-}
-
-export function refreshInsights() {
-  return request(`${API_BASE}/refresh`, {
-    method: 'POST',
-    body: JSON.stringify({}),
-  })
+export function askInsightsQuestion(period, question) {
+  return post({ mode: 'question', period, question: question.trim() })
 }

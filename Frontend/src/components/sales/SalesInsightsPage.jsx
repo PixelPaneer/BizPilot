@@ -7,7 +7,7 @@ import {
   getTopSellingProducts,
 } from '../../data/salesData'
 import { resolveDateRange } from '../../utils/salesUtils'
-import BusinessInsights from '../insights/BusinessInsights'
+import AiInsights from '../insights/AiInsights'
 import RevenueAnalysis from './RevenueAnalysis'
 import SalesByCategory from './SalesByCategory'
 import SalesInsightsHeader from './SalesInsightsHeader'
@@ -81,7 +81,8 @@ export default function SalesInsightsPage() {
 
       {/* AI Business Insights - independent of existing chart data */}
       <Reveal delay={80}>
-        <BusinessInsights />
+        {/* AI Business Insights: follows the page's date range */}
+        <AiInsights period={dateRange.preset} />
       </Reveal>
 
       {/* Revenue Analysis directly below AI Business Insights */}
