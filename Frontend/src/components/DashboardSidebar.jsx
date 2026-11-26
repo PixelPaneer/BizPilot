@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom'
 import { CircleHelp, Home, Package, Settings, TrendingUp } from 'lucide-react'
 
 const links = [
-  { to: '/', label: 'Dashboard', icon: Home, end: true },
+  { to: '/dashboard', label: 'Dashboard', icon: Home, end: true },
   { to: '/inventory', label: 'Inventory', icon: Package },
   { to: '/analytics', label: 'Analytics', icon: TrendingUp },
   { to: '/help', label: 'Help & Support', icon: CircleHelp },
