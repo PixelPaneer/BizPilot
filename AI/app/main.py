@@ -85,6 +85,7 @@ def create_app(
     app.include_router(health.router)
     app.include_router(internal.router)
     app.include_router(customer.router)
+    app.include_router(orchestrator.router)
     app.include_router(bills.router)
 
     @app.exception_handler(ApiError)
