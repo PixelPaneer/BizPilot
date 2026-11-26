@@ -1,41 +1,70 @@
-// Talks to the Node backend: POST /api/v1/insights/ask (Node forwards it to the AI Insights Agent).
+const DASHBOARD_API_URL = '/api/v1/insights/ask';
+const ASSISTANT_API_URL = '/api/v1/assistant/message';
 
-const API_URL = '/api/v1/insights/ask'
-
-// Periods the AI endpoint understands. A custom date range is not supported by it.
-export const SUPPORTED_PERIODS = ['last7', 'last30', 'last90', 'thisMonth']
+// Periods supported by the dashboard Insights API.
+export const SUPPORTED_PERIODS = [
+  'last7',
+  'last30',
+  'last90',
+  'thisMonth',
+];
 
 function getAccessToken() {
-  // TODO: replace with the app's real sign-in token source (the merged frontend's auth helper).
-  return localStorage.getItem('accessToken')
+  return localStorage.getItem('accessToken');
 }
 
-async function post(body) {
-  const token = getAccessToken()
-  const response = await fetch(API_URL, {
+async function post(url, body) {
+  const token = getAccessToken();
+
+  const response = await fetch(url, {
     method: 'POST',
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(token
+        ? { Authorization: `Bearer ${token}` }
+        : {}),
     },
     body: JSON.stringify(body),
-  })
+  });
 
-  const payload = await response.json().catch(() => null)
+  const payload = await response.json().catch(() => null);
 
   if (!response.ok || !payload?.success) {
-    throw new Error(payload?.message || `Request failed (${response.status})`)
+    throw new Error(
+      payload?.message || `Request failed (${response.status})`
+    );
   }
 
-  // { mode, period, summary, insights: [{ title, observation, recommendation }], used_fallback }
-  return payload.data
+  return payload.data;
 }
 
+// Existing automatic dashboard insights.
+// Do not change this endpoint.
 export function getDashboardInsights(period) {
-  return post({ mode: 'dashboard', period })
+  return post(DASHBOARD_API_URL, {
+    mode: 'dashboard',
+    period,
+  });
 }
 
-export function askInsightsQuestion(period, question) {
-  return post({ mode: 'question', period, question: question.trim() })
+// Conversational questions go through the Orchestrator.
+export async function askInsightsQuestion(period, question) {
+  const result = await post(ASSISTANT_API_URL, {
+    message: question.trim(),
+  });
+
+  if (!result?.reply) {
+    throw new Error('The assistant returned an empty response.');
+  }
+
+  // Adapt the Orchestrator response to the existing
+  // AiInsights.jsx Answer component.
+  return {
+    summary: result.reply,
+    insights: [],
+    used_fallback: false,
+    route: result.route,
+    language: result.language,
+  };
 }
