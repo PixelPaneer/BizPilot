@@ -4,6 +4,8 @@ import { Router } from "express";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { searchCatalog } from "../services/catalog.service.js";
 import { validateCatalogSearch } from "../validators/catalog.validator.js";
+import * as analyticsService from "../services/analytics.service.js";
+import { validateAnalyticsQuery } from "../validators/analytics.validator.js";
 
 // Routes only the AI service may call. app.js mounts them behind serviceAuth, so req.serviceBusinessId
 // is always set here. They are not versioned and not reachable with an owner's sign-in.
@@ -51,5 +53,60 @@ router.get(
   })
 );
 
+
+// Owner analytics data for the Insights Agent.
+// The business ID comes exclusively from the verified service JWT.
+
+router.get(
+  "/analytics/category-sales",
+  validateAnalyticsQuery,
+  asyncHandler(async (req, res) => {
+    const data = await analyticsService.getCategorySales(
+      req.serviceBusinessId,
+      req.query
+    );
+
+    res.status(200).json({ success: true, data });
+  })
+);
+
+router.get(
+  "/analytics/top-products",
+  validateAnalyticsQuery,
+  asyncHandler(async (req, res) => {
+    const data = await analyticsService.getTopProducts(
+      req.serviceBusinessId,
+      req.query
+    );
+
+    res.status(200).json({ success: true, data });
+  })
+);
+
+router.get(
+  "/analytics/revenue-analysis",
+  validateAnalyticsQuery,
+  asyncHandler(async (req, res) => {
+    const data = await analyticsService.getRevenueAnalysis(
+      req.serviceBusinessId,
+      req.query
+    );
+
+    res.status(200).json({ success: true, data });
+  })
+);
+
+router.get(
+  "/analytics/slow-movers",
+  validateAnalyticsQuery,
+  asyncHandler(async (req, res) => {
+    const data = await analyticsService.getSlowMovers(
+      req.serviceBusinessId,
+      req.query
+    );
+
+    res.status(200).json({ success: true, data });
+  })
+);
 
 export default router;
