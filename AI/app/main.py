@@ -16,6 +16,9 @@ from app.llm.transcribe import GeminiTranscriber
 from app.llm.vision import GeminiVision
 from app.shared.logging import setup_logging
 from app.tools.node_client import NodeClient
+from app.agents.insights.agent import InsightsAgent
+from app.agents.orchestrator.graph import build_orchestrator_graph, orchestrate
+from app.api import bills, customer, health, internal, orchestrator
 
 
 class _NoModel:
@@ -80,6 +83,16 @@ def create_app(
     app.state.vision = vision or _make_vision(settings)
     app.state.customer_graph = build_customer_graph(app.state.llm, app.state.node_client)
     # Tests (and the app itself) can swap the settings through FastAPI's dependency system.
+    app.state.insights_agent = InsightsAgent(app.state.llm, app.state.node_client)
+    app.state.orchestrator_graph = build_orchestrator_graph(
+    app.state.llm,
+    app.state.customer_graph,
+    app.state.insights_agent,
+    )
+    app.state.orchestrator = lambda **kwargs: orchestrate(
+        app.state.orchestrator_graph,
+        **kwargs,
+    )
     app.dependency_overrides[get_settings] = lambda: settings
 
     app.include_router(health.router)
