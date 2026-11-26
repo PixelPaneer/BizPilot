@@ -7,7 +7,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.agents.customer.graph import build_customer_graph
-from app.api import bills, customer, health, insights, internal
+from app.api import bills, customer, health, insights, internal, orchestrator
 from app.config import Settings, get_settings
 from app.errors import ApiError
 from app.llm.base import LlmClient, LlmError
@@ -17,7 +17,7 @@ from app.llm.vision import GeminiVision
 from app.shared.logging import setup_logging
 from app.tools.node_client import NodeClient
 from app.agents.insights.agent import InsightsAgent
-
+from app.agents.orchestrator.graph import build_orchestrator_graph
 class _NoModel:
     """Stands in when GEMINI_API_KEY is not set: every call fails, so the service still answers with
     its fixed replies instead of refusing to start."""
@@ -88,6 +88,9 @@ def create_app(
         app.state.llm,
         app.state.node_client
     )
+    app.state.orchestrator_graph = build_orchestrator_graph(
+    app.state.llm, app.state.customer_graph, app.state.insights_agent
+    )
     app.dependency_overrides[get_settings] = lambda: settings
 
     app.include_router(health.router)
@@ -95,8 +98,8 @@ def create_app(
     app.include_router(customer.router)
     app.include_router(bills.router)
 
-    # NEW: Insights API
     app.include_router(insights.router)
+    app.include_router(orchestrator.router)
 
     @app.exception_handler(ApiError)
     async def handle_api_error(request: Request, error: ApiError):
