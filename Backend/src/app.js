@@ -16,6 +16,7 @@ import faqRoutes from "./routes/faq.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import internalRoutes from "./routes/internal.routes.js";
 import insightsRoutes from "./routes/insights.routes.js";
+import assistantRoutes from "./routes/assistant.routes.js";
 import { serviceAuth } from "./middleware/serviceAuth.middleware.js";
 import { authenticate } from "./middleware/auth.middleware.js";
 import { requireBusinessContext } from "./middleware/requireBusinessContext.js";
@@ -45,6 +46,11 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/analytics", authenticate, analyticsRoutes);
 app.use("/api/v1/products", authenticate, requireBusinessContext, productRoutes);
 app.use("/api/v1/inventory", authenticate, requireBusinessContext, inventoryRoutes);
+app.use("/api/v1/assistant",
+  authenticate,
+  requireBusinessContext,
+  assistantRoutes
+);
 app.use("/api/v1/insights",authenticate,requireBusinessContext,insightsRoutes);
 app.use("/api/v1/sales", authenticate, requireBusinessContext, saleRoutes);
 app.use("/api/v1/purchases", authenticate, requireBusinessContext, purchaseRoutes);
