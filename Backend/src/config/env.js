@@ -92,5 +92,12 @@ export const whatsapp = {
   phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID?.trim() || null,
   otpTemplate: process.env.WHATSAPP_OTP_TEMPLATE?.trim() || "bizpilot_otp",
   templateLanguage: process.env.WHATSAPP_TEMPLATE_LANGUAGE?.trim() || "en",
-  apiVersion: process.env.WHATSAPP_API_VERSION?.trim() || "v20.0"
+  apiVersion: process.env.WHATSAPP_API_VERSION?.trim() || "v20.0",
+  appSecret: process.env.WHATSAPP_APP_SECRET?.trim() || null,
+  verifyToken: process.env.WHATSAPP_VERIFY_TOKEN?.trim() || null,
+  accessToken:
+    process.env.WHATSAPP_ACCESS_TOKEN?.trim() ||
+    process.env.WHATSAPP_API_TOKEN?.trim() ||
+    null,
+  webhookApiVersion: process.env.WHATSAPP_WEBHOOK_API_VERSION?.trim() || "v21.0",
 };

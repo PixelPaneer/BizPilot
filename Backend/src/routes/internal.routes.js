@@ -53,10 +53,7 @@ router.get(
   })
 );
 
-
-// Owner analytics data for the Insights Agent.
-// The business ID comes exclusively from the verified service JWT.
-
+// Owner analytics data for the Insights Agent. Business identity comes from the service JWT.
 router.get(
   "/analytics/category-sales",
   validateAnalyticsQuery,
@@ -65,7 +62,6 @@ router.get(
       req.serviceBusinessId,
       req.query
     );
-
     res.status(200).json({ success: true, data });
   })
 );
@@ -78,7 +74,6 @@ router.get(
       req.serviceBusinessId,
       req.query
     );
-
     res.status(200).json({ success: true, data });
   })
 );
@@ -91,7 +86,6 @@ router.get(
       req.serviceBusinessId,
       req.query
     );
-
     res.status(200).json({ success: true, data });
   })
 );
@@ -104,7 +98,6 @@ router.get(
       req.serviceBusinessId,
       req.query
     );
-
     res.status(200).json({ success: true, data });
   })
 );

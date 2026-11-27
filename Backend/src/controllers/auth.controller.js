@@ -9,8 +9,6 @@ import { ApiError } from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
-// The refresh token lives only in this cookie: httpOnly (scripts cannot read it), and sent only to
-// the auth endpoints.
 const REFRESH_COOKIE = "bizpilot_refresh";
 const COOKIE_PATH = "/api/v1/auth";
 
@@ -36,7 +34,6 @@ function clearRefreshCookie(res) {
 const register = asyncHandler(async (req, res) => {
   const { user, business } = await authService.registerOwner(req.body);
 
-  // Registration does not issue a token. The user signs in after account creation.
   return res.status(201).json(
     new ApiResponse(201, { user, business }, "Account created. Please sign in.")
   );
@@ -76,7 +73,6 @@ const login = asyncHandler(async (req, res) => {
   );
 });
 
-// Exchanges the refresh cookie for a new access token (and a new refresh cookie).
 const refresh = asyncHandler(async (req, res) => {
   try {
     const session = await authService.refreshSession(req.cookies?.[REFRESH_COOKIE]);

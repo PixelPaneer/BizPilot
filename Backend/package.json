@@ -11,7 +11,7 @@
     "dev": "nodemon server.js",
     "migrate": "node scripts/migrate.js",
     "seed:dev": "node scripts/seed-dev.js",
-    "test": "node --test --test-concurrency=1 tests/inventory/foundation.test.js tests/inventory/backend.test.js tests/inventory/write-validator.test.js tests/inventory/sales.test.js tests/inventory/dashboard.test.js tests/inventory/settings.test.js tests/inventory/stock-insights.test.js tests/auth/auth.test.js tests/internal/service-auth.test.js tests/internal/catalog-search.test.js tests/inventory/bill-extract.test.js"
+    "test": "node --test --test-concurrency=1 tests/inventory/foundation.test.js tests/inventory/backend.test.js tests/inventory/write-validator.test.js tests/inventory/sales.test.js tests/inventory/dashboard.test.js tests/inventory/settings.test.js tests/inventory/stock-insights.test.js tests/auth/auth.test.js tests/internal/service-auth.test.js tests/internal/catalog-search.test.js tests/internal/faq-search.test.js tests/internal/assistant-route.test.js tests/internal/whatsapp-webhook.test.js tests/inventory/bill-extract.test.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -25,6 +25,7 @@
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.5.0",
+    "ngrok": "^5.0.0-beta.2",
     "nodemailer": "^6.9.16",
     "pdfkit": "^0.21.0",
     "pg": "^8.13.1"

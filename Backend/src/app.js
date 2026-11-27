@@ -17,20 +17,24 @@ import authRoutes from "./routes/auth.routes.js";
 import internalRoutes from "./routes/internal.routes.js";
 import insightsRoutes from "./routes/insights.routes.js";
 import assistantRoutes from "./routes/assistant.routes.js";
+import whatsappWebhookRoutes from "./routes/whatsappWebhook.routes.js";
 import { serviceAuth } from "./middleware/serviceAuth.middleware.js";
 import { authenticate } from "./middleware/auth.middleware.js";
 import { requireBusinessContext } from "./middleware/requireBusinessContext.js";
-
 
 const app = express();
 
 app.use(helmet());
 app.use(
   cors({
-    // FRONTEND_ORIGIN may list several origins, separated by commas.
     origin: env.frontendOrigin.split(",").map((origin) => origin.trim()),
     credentials: true,
   })
+);
+app.use(
+  "/webhooks/whatsapp",
+  express.raw({ type: "application/json", limit: "1mb" }),
+  whatsappWebhookRoutes
 );
 app.use(express.json());
 app.use(cookieParser());
@@ -44,14 +48,10 @@ app.get("/api/v1/health", (req, res) => {
 app.use("/api/v1/auth", authRoutes);
 
 app.use("/api/v1/analytics", authenticate, analyticsRoutes);
+app.use("/api/v1/insights", authenticate, requireBusinessContext, insightsRoutes);
+app.use("/api/v1/assistant", authenticate, requireBusinessContext, assistantRoutes);
 app.use("/api/v1/products", authenticate, requireBusinessContext, productRoutes);
 app.use("/api/v1/inventory", authenticate, requireBusinessContext, inventoryRoutes);
-app.use("/api/v1/assistant",
-  authenticate,
-  requireBusinessContext,
-  assistantRoutes
-);
-app.use("/api/v1/insights",authenticate,requireBusinessContext,insightsRoutes);
 app.use("/api/v1/sales", authenticate, requireBusinessContext, saleRoutes);
 app.use("/api/v1/purchases", authenticate, requireBusinessContext, purchaseRoutes);
 app.use("/api/v1/bills", authenticate, requireBusinessContext, billRoutes);
@@ -67,14 +67,12 @@ app.use((req, res) => {
   res.status(404).json({ success: false, message: "Route not found" });
 });
 
-// Global Error Handling Middleware
 app.use((error, req, res, next) => {
   if (res.headersSent) {
     return next(error);
   }
 
   const status = error.statusCode || 500;
-
   if (status >= 500) {
     console.error(error);
   }
