@@ -6,6 +6,7 @@ import DateRangeFilter from './DateRangeFilter'
 import { Card, CardHeader } from './SalesUI'
 import { CATEGORY_COLORS, FALLBACK_COLOR } from './salesConstants'
 import ViewToggle from './ViewToggle'
+import { getTopCategorySales } from '../../utils/salesInsights'
 
 const METRICS = {
   revenue: {
@@ -48,7 +49,7 @@ export default function SalesByCategory({ data, dateRange, onDateRangeChange }) 
   const [activeIndex, setActiveIndex] = useState(null)
   const metric = METRICS[metricKey]
 
-  const sorted = [...data].sort((a, b) => b[metric.field] - a[metric.field])
+  const sorted = getTopCategorySales(data, metric.field)
   const total = sorted.reduce((sum, item) => sum + item[metric.field], 0)
   const shares = roundedShares(sorted.map((item) => item[metric.field]))
   const slices = sorted.map((item, i) => ({

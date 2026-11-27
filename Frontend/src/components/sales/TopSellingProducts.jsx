@@ -51,12 +51,14 @@ function RankBadge({ rank }) {
 }
 
 export default function TopSellingProducts({ products, dateRange, onDateRangeChange }) {
+  const visibleProducts = products.slice(0, 15)
+
   return (
     <Card className="relative">
       <CardHeader
         icon={Trophy}
         title="Top Selling Products"
-        subtitle={`${products.length} products ranked by revenue.`}
+        subtitle={`${visibleProducts.length} products ranked by revenue.`}
         action={<DateRangeFilter value={dateRange} onChange={onDateRangeChange} />}
       />
 
@@ -73,7 +75,7 @@ export default function TopSellingProducts({ products, dateRange, onDateRangeCha
             </tr>
           </thead>
           <tbody>
-            {products.map((p, i) => (
+            {visibleProducts.map((p, i) => (
               <tr
                 key={p.productName}
                 className="sales-table-row border-b transition-colors last:border-0 hover:bg-[var(--sales-surface-hover)]"

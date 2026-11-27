@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAnalytics } from '../../utils/analyticsApi'
+import AiInsights from '../insights/AiInsights'
 import './sales.css'
 import RevenueAnalysis from './RevenueAnalysis'
 import SalesByCategory from './SalesByCategory'
@@ -83,6 +84,9 @@ export default function SalesInsightsPage() {
         <SalesInsightsHeader dateRange={dateRange} onDateRangeChange={handlePageRangeChange} />
       </Reveal>
       <Reveal delay={80} className="relative z-20">
+        <AiInsights key={dateRange.preset} period={dateRange.preset} />
+      </Reveal>
+      <Reveal delay={160} className="relative z-20">
         <Loaded load={categories} label="sales by category">
           {(data) => (
             <SalesByCategory
@@ -93,12 +97,12 @@ export default function SalesInsightsPage() {
           )}
         </Loaded>
       </Reveal>
-      <Reveal delay={160}>
+      <Reveal delay={240}>
         <Loaded load={trend} label="the sales trend">
           {(data) => <SalesTrend data={data} />}
         </Loaded>
       </Reveal>
-      <Reveal delay={240} className="relative z-10">
+      <Reveal delay={320} className="relative z-10">
         <Loaded load={topSelling} label="top selling products">
           {(data) => (
             <TopSellingProducts
@@ -109,7 +113,7 @@ export default function SalesInsightsPage() {
           )}
         </Loaded>
       </Reveal>
-      <Reveal delay={320}>
+      <Reveal delay={400}>
         <Loaded load={revenue} label="revenue analysis">
           {(data) => <RevenueAnalysis data={data} />}
         </Loaded>

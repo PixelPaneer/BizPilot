@@ -7,7 +7,7 @@ import {
   hasSessionHint,
   setAccessToken,
   UNAUTHORIZED_EVENT,
-} from './session'
+} from './session.js'
 
 const API_BASE = '/api/v1'
 
