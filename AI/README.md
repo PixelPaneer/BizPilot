@@ -1,22 +1,28 @@
 # BizPilot AI service
 
-Python (FastAPI) service that understands language for BizPilot: customer questions on WhatsApp and
-stock drafts from a voice note or bill photo. It never touches the database. It reads shop data only
-by calling the Node backend's `/internal/*` routes, and everything it says about a shop (prices,
-availability) comes from those calls, never from the model.
+Python (FastAPI) service for BizPilot's customer questions, stock drafts, business insights, and
+message routing. It never touches the database. It reads shop data only by calling the Node
+backend's `/internal/*` routes; business facts come from those calls, never from the model.
 
 What exists: the foundation (health check, service-token security in both directions, a client for
-calling Node), the customer-query flow (`POST /internal/customer-query`: a customer's message in, a short
-reply in English, Hindi or Hinglish out), and stock drafts (`POST /internal/bills/extract`: a voice note or a
-bill photo in, an editable list of stock lines out, each line marked as a sale or a purchase, so one note can
-mix both). The Inventory Agent is feature-complete; what is still open is a real-device accuracy test
-(`docs/REAL_DEVICE_TEST_CHECKLIST.md`), hardening (rate and cost limits, the free versus paid Gemini plan) and
-removing the testing-only `DEBUG_RETURN_TRANSCRIPT` setting before final delivery.
+calling Node), customer queries (`POST /internal/customer-query`), stock drafts
+(`POST /internal/bills/extract`), the Insights Agent (`POST /internal/insights/ask`), and the
+orchestrator (`POST /internal/orchestrate`). The Insights Agent explains analytics fetched from
+Node and uses deterministic calculations/fallbacks. The orchestrator routes customer messages to
+the customer flow and read-only owner questions to Insights; stock-change requests are redirected
+to the app. FAQ lookup uses Node's `GET /internal/faqs/search`; migration 010 provides its search
+column and index. These Insights and orchestrator additions were synced locally from teammate
+branches; the WhatsApp webhook itself is still separate work.
+
+The Inventory Agent is feature-complete; remaining work includes real-device accuracy testing
+(`docs/REAL_DEVICE_TEST_CHECKLIST.md`), hardening (rate and cost limits, the free versus paid Gemini
+plan), and removing the testing-only `DEBUG_RETURN_TRANSCRIPT` setting before final delivery.
 
 Who owns what: the Inventory Agent (`app/agents/inventory/`, `app/llm/`, `app/tools/`) stays with Piyush. The
 customer flow (`app/agents/customer/`, `app/shared/reply_templates.py`, `app/shared/reply_validator.py`,
-`app/api/customer.py`) is being handed to the Customer Agent members. The WhatsApp webhook and the
-orchestrator are another member's work.
+`app/api/customer.py`) is being handed to the Customer Agent members. The Insights Agent and
+orchestrator code came from `AI-Insights-Yatindra` and `AI-Orchestrator-Arunima`; the WhatsApp webhook
+is still another member's work.
 
 More detail, in plain language, is in `docs/` (kept in the project's `docs` folder):
 `INVENTORY_AGENT_EXPLAINED.md` (everything about the agent), `INTEGRATION_GUIDE_ORCHESTRATOR_WHATSAPP.md`
@@ -33,7 +39,7 @@ copy .env.example .env          # then set SERVICE_JWT_SECRET (same value as in 
 .\.venv\Scripts\python -m uvicorn app.main:app --port 8000
 ```
 
-Tests: `.\.venv\Scripts\python -m pytest` (183 tests, about 30 seconds; no network or Gemini key needed,
+Tests: `.\.venv\Scripts\python -m pytest` (250 tests; no network or Gemini key needed,
 Gemini and Node are faked in `tests/fakes.py`).
 
 Try it by hand (needs Node running with the same `SERVICE_JWT_SECRET`, and a catalog in its database):
@@ -82,14 +88,20 @@ route answers 503. `GET /health` needs no token.
 | `GET /health` | anyone | is the service up |
 | `POST /internal/ping` | Node | foundation check, Node to AI |
 | `GET /internal/check-node` | Node | foundation check, round trip: calls Node's `GET /internal/ping` |
-| `POST /internal/customer-query` | Node | `{ message, shopName? }` in, `{ reply, language, matchedCount }` out |
+| `POST /internal/customer-query` | Node | `{ message, shopName? }` in; product questions use the catalogue and FAQ questions return an approved answer |
 | `POST /internal/bills/extract?type=` | Node | a voice note (`Content-Type: audio/...`, 5 MB at most) or a bill photo (`image/jpeg`, `png` or `webp`, 10 MB at most) as the raw body, in, `{ type, lines, warnings }` out (every line has its own `type`: `SALE`, `PURCHASE` or null); `type` in the query is an optional `SALE` or `PURCHASE` hint that applies to every line |
+| `POST /internal/insights/ask` | Node | validated dashboard or owner-question request in; analytics-based summary and insights out |
+| `POST /internal/orchestrate` | Node | `{ message, senderRole, shopName? }` in; routes customer queries and read-only owner questions, redirects stock changes to the app |
 
 Errors have the same shape as the Node backend's: `{ success: false, message, errors, code }`.
 
 What this service calls on Node (always with a fresh token for the same shop): `GET /internal/catalog/search?q=&limit=`
 (customer-safe products: name, category, unit, price, status and a match score; never cost price or quantity),
-and `GET /internal/ping` for the round-trip check. Owners reach the drafts through Node's
+`GET /internal/faqs/search?q=&language=&limit=` (approved FAQs for that shop), and `GET /internal/ping`
+for the round-trip check. The Insights Agent also calls
+`GET /internal/analytics/category-sales`, `/top-products`, `/revenue-analysis` and `/slow-movers`.
+The FAQ search route requires migration 010 for the generated search column and index. Owners reach
+the drafts through Node's
 `POST /api/v1/bills/extract`, which checks their sign-in and forwards the file here.
 
 ## Layout
@@ -101,15 +113,17 @@ app/
   errors.py        ApiError
   api/             HTTP routes only, no logic
   agents/
-    customer/      the customer-query graph (understand, lookup, compose), prompts, schemas, a
-                   plain-code fallback reading of a message
+    customer/      the customer-query graph (understand, catalogue or FAQ lookup, compose), prompts,
+                   schemas, FAQ retrieval and a plain-code fallback reading of a message
+    insights/      analytics facts, explanations, validation and deterministic fallbacks
+    orchestrator/  routes customer and owner text messages to the right flow
     inventory/     availability.py: from what a customer wrote to the shop's products (price and
                    status only); asks the model to choose only when no match is clear.
                    stock_draft.py: a voice note or a bill photo to a draft of stock lines
   llm/             base.py (the client shape, so tests can fake it), gemini.py (the Gemini client),
                    transcribe.py (speech to text for voice notes),
                    vision.py (reading a bill photo)
-  tools/           node_client.py: the only way to read business data
+  tools/           node_client.py: the only way to read business data; insights.py: analytics retrieval
   shared/          logging.py (metadata only: never message text, audio, images or tokens),
                    reply_templates.py (fixed replies), reply_validator.py (checks a drafted reply)
 scripts/           check_gemini.py, make_token.py
@@ -117,18 +131,22 @@ tests/
 ```
 
 ## How a customer message is answered
-1. **understand**: the model reads the message and returns the intent, the product names (also in
-   Latin letters) and the language. If the model fails, a plain-code reading is used instead.
-2. **lookup** (Inventory Agent): Node's customer-safe search finds the products. A clear match needs
-   no model. When nothing matches well, the model picks among at most 5 product names (names only).
+1. **understand**: the model reads the message and returns the intent, any product names (also in
+   Latin letters) and the language. It can classify general shop questions as FAQs. If the model fails,
+   a plain-code reading is used instead.
+2. **FAQ lookup**: FAQ questions use Node's approved FAQ search and return a stored answer, or a fixed
+   no-approved-answer reply.
+3. **product lookup** (Inventory Agent): Node's customer-safe search finds the products. A clear match
+   needs no model. When nothing matches well, the model picks among at most 5 product names (names only).
    A named price or size narrows the variants.
-3. **compose**: the model writes the reply from the facts (name, price, status) only. The wording is
+4. **compose**: the model writes the product reply from the facts (name, price, status) only. The wording is
    then checked: every number must be one of the prices, every product must be named, the status words
    must match, and nothing about cost or quantity is allowed. If it fails the check, or the model is
    down, a fixed template is used. Greetings, unrelated questions and "not found" use templates too.
 
 The customer's message goes to the model only as the user turn of the first request; it is never in
-the instructions, never in the writing request, never sent to Node as a whole, and never logged.
+the instructions or the product-reply writing request. For FAQ questions, the message is also used as
+the query to Node's dedicated FAQ search route. Customer content is not stored or logged.
 
 ## How a voice note becomes a stock draft
 1. **transcribe**: the audio goes to the speech model (`GEMINI_TRANSCRIBE_MODEL`, a Flash model that

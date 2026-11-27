@@ -1,14 +1,8 @@
 
-"""Checks a drafted reply against the facts it was written from.
+"""Validate AI-generated customer replies against catalogue facts.
 
-The model writes the wording; it must not add anything. A reply passes only if:
-  - every number in it is a price from the facts (or a digit that is part of a product name),
-  - every product in the facts is named,
-  - every product occurrence has its own correct price and availability status,
-  - the stock words it uses match the statuses in the facts,
-  - it does not talk about cost, margins or quantities.
-
-When validation fails, the caller uses fixed templates based on the facts.
+Each occurrence of a product must be associated with a valid catalogue
+price and availability status. Repeated product names are supported.
 """
 
 import re
@@ -65,10 +59,7 @@ def _normalise_name(name: str) -> str:
     return re.sub(r"[\W_]+", " ", name.lower()).strip()
 
 
-def _find_occurrences(
-    reply: str,
-    facts: list[dict],
-) -> list[tuple[int, int, str]]:
+def _find_occurrences(reply: str, facts: list[dict]) -> list[tuple[int, int, str]]:
     """Find every product-name occurrence, including repeated names.
 
     Longer names take precedence when product names overlap.
@@ -87,6 +78,7 @@ def _find_occurrences(
         for match in pattern.finditer(reply):
             candidates.append((match.start(), match.end(), name))
 
+    # Prefer longer names, then earlier positions.
     candidates.sort(
         key=lambda item: (-(item[1] - item[0]), item[0])
     )
@@ -114,20 +106,22 @@ def _fact_matches_segment(fact: dict, segment: str) -> bool:
     if not expected_price:
         return False
 
-    if expected_price not in _numbers_in(segment):
+    segment_numbers = _numbers_in(segment)
+
+    if expected_price not in segment_numbers:
         return False
 
-    status = fact["status"]
-
-    if status not in _STATUS_PATTERNS:
+    if fact["status"] not in _STATUS_PATTERNS:
         return False
 
-    if not _STATUS_PATTERNS[status].search(segment):
+    expected_pattern = _STATUS_PATTERNS[fact["status"]]
+
+    if not expected_pattern.search(segment):
         return False
 
     # A segment must not claim a different availability status too.
-    for other_status, pattern in _STATUS_PATTERNS.items():
-        if other_status != status and pattern.search(segment):
+    for status, pattern in _STATUS_PATTERNS.items():
+        if status != fact["status"] and pattern.search(segment):
             return False
 
     return True
@@ -147,16 +141,15 @@ def check_reply(reply: str, facts: list[dict], language: str) -> list[str]:
     if len(text) > MAX_REPLY_LENGTH:
         problems.append("reply too long")
 
-    # Preserve the original restriction on cost, margins and quantities.
     if _FORBIDDEN.search(text):
         problems.append("mentions cost, margin or quantity")
 
-    # Every product occurrence must have its own correct price and status.
     occurrences = _find_occurrences(text, facts)
 
     if len(occurrences) != len(facts):
         problems.append("one or more product occurrences are missing or extra")
 
+    # Build a segment around each product occurrence.
     segments = []
 
     for index, (start, end, name) in enumerate(occurrences):
@@ -168,8 +161,8 @@ def check_reply(reply: str, facts: list[dict], language: str) -> list[str]:
 
         segments.append((name, text[start:next_start]))
 
-    # Match each occurrence to one unused fact. This supports duplicate
-    # catalogue names with different prices or statuses.
+    # Match each occurrence to one unused fact. This allows two catalogue
+    # products with the same display name but different prices/statuses.
     unused_facts = list(facts)
 
     for name, segment in segments:
@@ -202,7 +195,6 @@ def check_reply(reply: str, facts: list[dict], language: str) -> list[str]:
 
     for fact in facts:
         price = _normalise_number(str(fact["price"]))
-
         if price:
             allowed_numbers.add(price)
 
@@ -215,27 +207,19 @@ def check_reply(reply: str, facts: list[dict], language: str) -> list[str]:
             f"numbers not in the facts: {sorted(extra_numbers)}"
         )
 
-    # Preserve the original global checks against unsupported stock claims.
     statuses = {fact["status"] for fact in facts}
 
     for status, pattern in _STATUS_PATTERNS.items():
         if status not in statuses and pattern.search(text):
-            problems.append(
-                f"claims {status} without a fact for it"
-            )
+            problems.append(f"claims {status} without a fact for it")
 
-    # Preserve the original requirement that every status in the facts
-    # must be expressed in the reply.
     words = STATUS_WORDS.get(language, STATUS_WORDS["english"])
 
     for status in statuses:
         pattern = _STATUS_PATTERNS.get(status)
-
         if pattern is None:
             problems.append(f"unknown status in facts: {status}")
-            continue
-
-        if not pattern.search(text) and words[status].lower() not in text.lower():
+        elif not pattern.search(text) and words[status].lower() not in text.lower():
             problems.append(f"status not stated: {status}")
 
     return problems

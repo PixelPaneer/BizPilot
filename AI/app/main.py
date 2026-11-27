@@ -7,7 +7,9 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.agents.customer.graph import build_customer_graph
-from app.api import bills, customer, health, internal
+from app.agents.insights.agent import InsightsAgent
+from app.agents.orchestrator.graph import build_orchestrator_graph
+from app.api import bills, customer, health, insights, internal, orchestrator
 from app.config import Settings, get_settings
 from app.errors import ApiError
 from app.llm.base import LlmClient, LlmError
@@ -16,9 +18,6 @@ from app.llm.transcribe import GeminiTranscriber
 from app.llm.vision import GeminiVision
 from app.shared.logging import setup_logging
 from app.tools.node_client import NodeClient
-from app.agents.insights.agent import InsightsAgent
-from app.agents.orchestrator.graph import build_orchestrator_graph, orchestrate
-from app.api import bills, customer, health, internal, orchestrator
 
 
 class _NoModel:
@@ -82,24 +81,21 @@ def create_app(
     app.state.transcriber = transcriber or _make_transcriber(settings)
     app.state.vision = vision or _make_vision(settings)
     app.state.customer_graph = build_customer_graph(app.state.llm, app.state.node_client)
-    # Tests (and the app itself) can swap the settings through FastAPI's dependency system.
     app.state.insights_agent = InsightsAgent(app.state.llm, app.state.node_client)
     app.state.orchestrator_graph = build_orchestrator_graph(
-    app.state.llm,
-    app.state.customer_graph,
-    app.state.insights_agent,
+        app.state.llm,
+        app.state.customer_graph,
+        app.state.insights_agent,
     )
-    app.state.orchestrator = lambda **kwargs: orchestrate(
-        app.state.orchestrator_graph,
-        **kwargs,
-    )
+    # Tests (and the app itself) can swap the settings through FastAPI's dependency system.
     app.dependency_overrides[get_settings] = lambda: settings
 
     app.include_router(health.router)
     app.include_router(internal.router)
     app.include_router(customer.router)
-    app.include_router(orchestrator.router)
     app.include_router(bills.router)
+    app.include_router(insights.router)
+    app.include_router(orchestrator.router)
 
     @app.exception_handler(ApiError)
     async def handle_api_error(request: Request, error: ApiError):

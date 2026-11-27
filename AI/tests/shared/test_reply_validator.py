@@ -61,6 +61,13 @@ def test_a_status_that_is_in_the_facts_but_not_in_the_reply_is_refused():
     assert check_reply("Maggi (₹14).", facts, "english")
 
 
+def test_unsupported_status_claim_before_products_is_refused():
+    facts = [{"name": "Maggi", "price": 14, "status": "available"}]
+    reply = "Everything else is out of stock. Maggi (₹14) is available."
+
+    assert check_reply(reply, facts, "english")
+
+
 @pytest.mark.parametrize("language", ["hindi", "hinglish"])
 def test_other_languages_are_checked_too(language):
     words = STATUS_WORDS[language]

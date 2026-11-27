@@ -1,11 +1,10 @@
-
 """The customer-query flow as a LangGraph graph.
 
-    understand -> product query -> lookup -> compose -> done
-               -> FAQ query -> faq_lookup -> compose -> done
-               -> greeting / other -> compose -> done
+    understand -> (product question?) -> lookup -> compose -> done
+                        \\-> compose (greeting, other, nothing to look up)
 
-The graph holds no memory between requests.
+The Inventory Agent retrieves product facts from Node.
+The Customer Agent only replies using those facts.
 """
 
 import json
@@ -34,6 +33,7 @@ class Reply(BaseModel):
 
 class CustomerState(TypedDict, total=False):
     # Input
+    faq: FAQAnswer | None
     business_id: str
     message: str
     shop_name: str | None
@@ -41,7 +41,6 @@ class CustomerState(TypedDict, total=False):
     # Intermediate state
     understanding: Understanding
     items: list[AvailabilityItem]
-    faq: FAQAnswer | None
     llm_failed: bool
 
     # Output
@@ -59,7 +58,6 @@ def build_customer_graph(llm: LlmClient, node: NodeClient):
                 user=state["message"],
                 schema=Understanding,
             )
-
             return {
                 "understanding": understanding,
                 "llm_failed": False,
@@ -109,7 +107,6 @@ def build_customer_graph(llm: LlmClient, node: NodeClient):
         language = templates.language_or_default(understanding.language)
         items = state.get("items") or []
 
-        # FAQ response
         if understanding.intent == "faq_query":
             faq = state.get("faq")
 
@@ -126,7 +123,6 @@ def build_customer_graph(llm: LlmClient, node: NodeClient):
                 "used_fallback": True,
             }
 
-        # Greeting response
         if understanding.intent == "greeting":
             return {
                 "reply": templates.greeting_reply(language),
@@ -134,7 +130,6 @@ def build_customer_graph(llm: LlmClient, node: NodeClient):
                 "used_fallback": False,
             }
 
-        # Other messages
         if understanding.intent == "other" or not understanding.mentions:
             return {
                 "reply": templates.other_reply(language),
@@ -142,7 +137,6 @@ def build_customer_graph(llm: LlmClient, node: NodeClient):
                 "used_fallback": False,
             }
 
-        # Product not found
         if not items:
             return {
                 "reply": templates.no_match_reply(language),
@@ -170,6 +164,9 @@ def build_customer_graph(llm: LlmClient, node: NodeClient):
             draft = drafted.reply.strip()
             validation_problems = check_reply(draft, facts, language)
 
+            # IMPORTANT:
+            # An empty problem list means the reply is valid.
+            # Any validation problem means we must use the fixed template.
             if not validation_problems:
                 return {
                     "reply": draft,
@@ -180,7 +177,7 @@ def build_customer_graph(llm: LlmClient, node: NodeClient):
         except LlmError:
             pass
 
-        # Model failed or generated an unsupported reply.
+        # The model failed or its reply contained an unsupported claim.
         return {
             "reply": templates.availability_reply(facts, language),
             "language": language,
@@ -188,10 +185,9 @@ def build_customer_graph(llm: LlmClient, node: NodeClient):
         }
 
     graph = StateGraph(CustomerState)
-
+    graph.add_node("faq_lookup", faq_lookup)
     graph.add_node("understand", understand)
     graph.add_node("lookup", lookup)
-    graph.add_node("faq_lookup", faq_lookup)
     graph.add_node("compose", compose)
 
     graph.add_edge(START, "understand")
@@ -201,9 +197,8 @@ def build_customer_graph(llm: LlmClient, node: NodeClient):
         route_after_understand,
         ["lookup", "faq_lookup", "compose"],
     )
-
-    graph.add_edge("lookup", "compose")
     graph.add_edge("faq_lookup", "compose")
+    graph.add_edge("lookup", "compose")
     graph.add_edge("compose", END)
 
     return graph.compile()
@@ -217,7 +212,6 @@ async def answer_customer(
     shop_name: str | None,
 ) -> dict:
     """Run one customer query and return reply, language and matched count."""
-
     started = time.perf_counter()
 
     state = await graph.ainvoke(
@@ -230,6 +224,7 @@ async def answer_customer(
 
     matched = len(state.get("items") or [])
 
+    # Metadata only: never log the customer's message, product words or reply.
     log_event(
         "customer_query",
         flow="customer",
